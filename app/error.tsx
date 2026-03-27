@@ -53,7 +53,7 @@ export default function Error({
               <RefreshCw className="mr-2 h-4 w-4" />
               Try again
             </Button>
-            <Button variant="outline" asChild className="w-full bg-transparent">
+            <Button variant="outline"  className="w-full bg-transparent">
               <Link href="/">
                 <Home className="mr-2 h-4 w-4" />
                 Go to Dashboard
