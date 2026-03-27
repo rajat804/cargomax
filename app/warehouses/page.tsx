@@ -67,6 +67,8 @@ import {
   Printer,
 } from "lucide-react";
 import Link from "next/link";
+import AddWarehouseForm from "./AddWarehouseForm";
+import WarehouseList from "./components/WarehouseList";
 
 interface Warehouse {
   id: string;
@@ -87,11 +89,11 @@ interface Warehouse {
   };
   status: "operational" | "maintenance" | "closed" | "construction";
   type:
-    | "distribution"
-    | "storage"
-    | "fulfillment"
-    | "cross-dock"
-    | "cold-storage";
+  | "distribution"
+  | "storage"
+  | "fulfillment"
+  | "cross-dock"
+  | "cold-storage";
   capacity: {
     total: number;
     used: number;
@@ -531,90 +533,10 @@ export default function WarehouseLocationsPage() {
                   Create a new warehouse location in your network
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Warehouse Name</Label>
-                    <Input id="name" placeholder="Enter warehouse name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="code">Warehouse Code</Label>
-                    <Input id="code" placeholder="e.g., WH005" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input id="address" placeholder="Enter full address" />
-                </div>
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" placeholder="City" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input id="state" placeholder="State" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="zip">ZIP Code</Label>
-                    <Input id="zip" placeholder="ZIP" />
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Warehouse Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="distribution">
-                          Distribution
-                        </SelectItem>
-                        <SelectItem value="storage">Storage</SelectItem>
-                        <SelectItem value="fulfillment">Fulfillment</SelectItem>
-                        <SelectItem value="cross-dock">Cross-Dock</SelectItem>
-                        <SelectItem value="cold-storage">
-                          Cold Storage
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="capacity">Total Capacity (sq ft)</Label>
-                    <Input id="capacity" type="number" placeholder="500000" />
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" placeholder="+1 (555) 123-4567" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="warehouse@cargomax.com"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="manager">Manager Name</Label>
-                  <Input id="manager" placeholder="Manager name" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsAddDialogOpen(false)}>
-                  Add Warehouse
-                </Button>
-              </div>
+              <AddWarehouseForm
+                onSuccess={() => setIsAddDialogOpen(false)}
+                onCancel={() => setIsAddDialogOpen(false)}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -685,58 +607,9 @@ export default function WarehouseLocationsPage() {
         </Card>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Warehouse Management</CardTitle>
-          <CardDescription>
-            Search, filter, and manage your warehouse locations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search warehouses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="operational">Operational</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                  <SelectItem value="construction">Construction</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="distribution">Distribution</SelectItem>
-                  <SelectItem value="storage">Storage</SelectItem>
-                  <SelectItem value="fulfillment">Fulfillment</SelectItem>
-                  <SelectItem value="cross-dock">Cross-Dock</SelectItem>
-                  <SelectItem value="cold-storage">Cold Storage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Warehouse Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">
+      {/* <div className="grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">
         {filteredWarehouses.map((warehouse) => (
           <Card key={warehouse.id} className="overflow-hidden">
             <CardHeader className="pb-3">
@@ -796,7 +669,7 @@ export default function WarehouseLocationsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Status */}
+              Status
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Status</span>
                 <Badge
@@ -810,7 +683,7 @@ export default function WarehouseLocationsPage() {
                 </Badge>
               </div>
 
-              {/* Location */}
+              Location
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -823,7 +696,7 @@ export default function WarehouseLocationsPage() {
                 </div>
               </div>
 
-              {/* Manager */}
+              Manager
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
@@ -844,7 +717,7 @@ export default function WarehouseLocationsPage() {
                 </div>
               </div>
 
-              {/* Capacity */}
+              Capacity
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Capacity</span>
@@ -871,7 +744,7 @@ export default function WarehouseLocationsPage() {
                 </div>
               </div>
 
-              {/* Key Metrics */}
+              Key Metrics
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="text-center">
                   <div className="text-lg font-semibold">
@@ -887,7 +760,7 @@ export default function WarehouseLocationsPage() {
                 </div>
               </div>
 
-              {/* Performance Indicators */}
+              Performance Indicators
               {warehouse.status === "operational" && (
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                   <div className="text-center">
@@ -911,7 +784,10 @@ export default function WarehouseLocationsPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
+      </div> */}
+
+        <WarehouseList />
+
 
       {/* Warehouse Details Dialog */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>

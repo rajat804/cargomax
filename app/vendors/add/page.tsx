@@ -3,6 +3,7 @@
 import React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import axios from "axios"
 import {
   ArrowLeft,
   ArrowRight,
@@ -312,29 +313,137 @@ export default function AddVendorPage() {
   }
 
   const handleSubmit = async () => {
-    if (!validateStep(currentStep)) return
+    if (!validateStep(currentStep)) return;
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const formDataToSend = new FormData();
+
+      // ✅ Map frontend fields to backend schema fields
+      const vendorData = {
+        // Basic Information
+        companyName: formData.companyName,
+        businessType: formData.businessType,
+        category: formData.category,
+        website: formData.website,
+        description: formData.description,
+        vendorId: formData.vendorId || undefined, // Auto-generate if empty
+
+        // Contact Information (using correct field names)
+        primaryContactName: formData.primaryContactName,
+        primaryContactTitle: formData.primaryContactTitle,
+        primaryContactEmail: formData.primaryContactEmail,
+        primaryContactPhone: formData.primaryContactPhone,
+        secondaryContactName: formData.secondaryContactName,
+        secondaryContactEmail: formData.secondaryContactEmail,
+        secondaryContactPhone: formData.secondaryContactPhone,
+
+        // Address Information
+        streetAddress: formData.streetAddress,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+
+        // Business Details
+        taxId: formData.taxId,
+        businessLicense: formData.businessLicense,
+        yearEstablished: formData.yearEstablished,
+        employeeCount: formData.employeeCount,
+        annualRevenue: formData.annualRevenue,
+
+        // Services & Capabilities
+        services: formData.services,
+        specializations: formData.specializations,
+        coverage: formData.coverage,
+        capacity: formData.capacity,
+
+        // Financial & Contract
+        paymentTerms: formData.paymentTerms,
+        currency: formData.currency,
+        creditLimit: formData.creditLimit,
+        insuranceProvider: formData.insuranceProvider,
+        insuranceCoverage: formData.insuranceCoverage,
+
+        // Compliance & Certifications
+        certifications: formData.certifications,
+        complianceStandards: formData.complianceStandards,
+
+        // Performance & Rating
+        initialRating: formData.initialRating,
+        riskLevel: formData.riskLevel,
+
+        // Additional Information
+        notes: formData.notes,
+        tags: formData.tags,
+        preferredCommunication: formData.preferredCommunication,
+        timeZone: formData.timeZone,
+      };
+
+      console.log("📦 Submitting vendor data:", vendorData);
+
+      // ✅ Add form data as JSON string
+      formDataToSend.append("formData", JSON.stringify(vendorData));
+
+      // ✅ Attach all uploaded files
+      if (formData.documents && formData.documents.length > 0) {
+        formData.documents.forEach((file: File) => {
+          formDataToSend.append("documents", file);
+        });
+        console.log(`📎 Attached ${formData.documents.length} files`);
+      } else {
+        console.log("⚠️ No documents to attach");
+      }
+
+      const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI || "http://localhost:4000";
+      const apiUrl = `${BASE_URI}/api/vendors`;
+
+      console.log("🚀 Sending to:", apiUrl);
+
+      const response = await axios.post(apiUrl, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 30000,
+      });
+
+      console.log("✅ Success Response:", response.data);
 
       toast({
-        title: "Vendor Added Successfully",
-        description: `${formData.companyName} has been added to your vendor directory.`,
-      })
+        title: "✅ Vendor Added Successfully",
+        description: `${formData.companyName} has been added to the directory.`,
+      });
 
-      router.push("/vendors")
-    } catch (error) {
+      // Redirect after success
+      setTimeout(() => {
+        router.push("/vendors");
+      }, 1500);
+
+    } catch (error: any) {
+      console.error("❌ Submit Error:", error.response?.data || error.message);
+
+      let errorMessage = "Failed to add vendor. Please try again.";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.details) {
+        errorMessage = Array.isArray(error.response.data.details)
+          ? error.response.data.details.join(", ")
+          : error.response.data.details;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: "Error",
-        description: "Failed to add vendor. Please try again.",
         variant: "destructive",
-      })
+        title: "❌ Error",
+        description: errorMessage,
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleFileUpload = (files: FileList | null) => {
     if (files) {
@@ -1097,125 +1206,123 @@ export default function AddVendorPage() {
   }
 
   return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex  items-center justify-between">
-          <div className="flex flex-wrap items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Add New Vendor</h1>
-              <p className="text-muted-foreground">Add a new vendor to your directory with comprehensive details</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  Step {currentStep} of {steps.length}
-                </span>
-                <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
-              </div>
-              <Progress value={progress} className="w-full" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Steps Navigation */}
-        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 3xl:grid-cols-8 gap-2">
-          {steps.map((step) => {
-            const Icon = step.icon
-            const isActive = currentStep === step.id
-            const isCompleted = currentStep > step.id
-
-            return (
-              <Card
-                key={step.id}
-                className={`cursor-pointer transition-all ${
-                  isActive
-                    ? "border-primary bg-primary/5"
-                    : isCompleted
-                      ? "border-green-500 bg-green-50 dark:bg-green-950"
-                      : "border-muted"
-                }`}
-                onClick={() => {
-                  if (step.id < currentStep || validateStep(currentStep)) {
-                    setCurrentStep(step.id)
-                  }
-                }}
-              >
-                <CardContent className="p-3 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <div
-                      className={`p-2 rounded-full ${
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : isCompleted
-                            ? "bg-green-500 text-white"
-                            : "bg-muted"
-                      }`}
-                    >
-                      {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium">{step.title}</p>
-                      <p className="text-xs text-muted-foreground hidden md:block">{step.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-
-        {/* Form Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {React.createElement(steps[currentStep - 1].icon, { className: "h-5 w-5" })}
-              {steps[currentStep - 1].title}
-            </CardTitle>
-            <CardDescription>{steps[currentStep - 1].description}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-6">{renderStepContent()}</CardContent>
-        </Card>
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="flex items-center gap-2">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex  items-center justify-between">
+        <div className="flex flex-wrap items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Previous
+            Back
           </Button>
-
-          <div className="flex items-center gap-2">
-            {currentStep < steps.length ? (
-              <Button onClick={nextStep} className="flex items-center gap-2">
-                Next
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={isSubmitting} className="flex items-center gap-2">
-                {isSubmitting ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Adding Vendor...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4" />
-                    Add Vendor
-                  </>
-                )}
-              </Button>
-            )}
+          <div>
+            <h1 className="text-3xl font-bold">Add New Vendor</h1>
+            <p className="text-muted-foreground">Add a new vendor to your directory with comprehensive details</p>
           </div>
         </div>
       </div>
+
+      {/* Progress Bar */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                Step {currentStep} of {steps.length}
+              </span>
+              <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
+            </div>
+            <Progress value={progress} className="w-full" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Steps Navigation */}
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 3xl:grid-cols-8 gap-2">
+        {steps.map((step) => {
+          const Icon = step.icon
+          const isActive = currentStep === step.id
+          const isCompleted = currentStep > step.id
+
+          return (
+            <Card
+              key={step.id}
+              className={`cursor-pointer transition-all ${isActive
+                ? "border-primary bg-primary/5"
+                : isCompleted
+                  ? "border-green-500 bg-green-50 dark:bg-green-950"
+                  : "border-muted"
+                }`}
+              onClick={() => {
+                if (step.id < currentStep || validateStep(currentStep)) {
+                  setCurrentStep(step.id)
+                }
+              }}
+            >
+              <CardContent className="p-3 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <div
+                    className={`p-2 rounded-full ${isActive
+                      ? "bg-primary text-primary-foreground"
+                      : isCompleted
+                        ? "bg-green-500 text-white"
+                        : "bg-muted"
+                      }`}
+                  >
+                    {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium">{step.title}</p>
+                    <p className="text-xs text-muted-foreground hidden md:block">{step.description}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Form Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {React.createElement(steps[currentStep - 1].icon, { className: "h-5 w-5" })}
+            {steps[currentStep - 1].title}
+          </CardTitle>
+          <CardDescription>{steps[currentStep - 1].description}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 md:p-6">{renderStepContent()}</CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between">
+        <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Previous
+        </Button>
+
+        <div className="flex items-center gap-2">
+          {currentStep < steps.length ? (
+            <Button onClick={nextStep} className="flex items-center gap-2">
+              Next
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="flex items-center gap-2">
+              {isSubmitting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Adding Vendor...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Add Vendor
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
