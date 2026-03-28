@@ -73,7 +73,7 @@ export default function ShipmentForm() {
         }
     }, [isOpen]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.customer || !formData.originWarehouse || !formData.destinationVendor ||
