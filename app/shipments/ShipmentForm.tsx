@@ -108,7 +108,7 @@ export default function ShipmentForm() {
             toast({
                 variant: "destructive",
                 title: "❌ Failed to Create Shipment",
-                description: error.response?.data?.message || "Something went wrong on server",
+                description: error.response?.data?.message || "Server error",
             });
         }
     };
