@@ -42,7 +42,7 @@ export default function NotFound() {
           </div>
 
           <div className="space-y-3">
-            <Button asChild className="w-full" size="lg">
+            <Button  className="w-full" size="lg">
               <Link href="/">
                 <Home className="mr-2 h-4 w-4" />
                 Go to Dashboard
@@ -50,13 +50,13 @@ export default function NotFound() {
             </Button>
 
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" asChild>
+              <Button variant="outline" >
                 <Link href="/shipments">
                   <Truck className="mr-2 h-4 w-4" />
                   Shipments
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" >
                 <Link href="/orders">
                   <Package className="mr-2 h-4 w-4" />
                   Orders
@@ -65,13 +65,13 @@ export default function NotFound() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" asChild>
+              <Button variant="outline" >
                 <Link href="/fleet">
                   <Users className="mr-2 h-4 w-4" />
                   Fleet
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" >
                 <Link href="/reports">
                   <BarChart3 className="mr-2 h-4 w-4" />
                   Reports
