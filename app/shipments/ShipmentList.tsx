@@ -14,18 +14,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, Eye, Edit, Copy, Trash2 } from "lucide-react";
+import { ArrowUpDown, Eye, Edit, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI || "http://localhost:4000";
 
+interface Shipment {
+    _id: string;
+    trackingId: string;
+    shipmentNumber?: string;
+    customer: string;
+    carrier: string;
+    originWarehouse?: { name: string; code?: string };
+    destinationVendor?: { companyName: string };
+    type: string;
+    priority: string;
+    weight: number;
+    items: number;
+    value: number;
+    status: string;
+}
+
 export default function ShipmentList() {
-    const [shipments, setShipments] = useState([]);
+    const [shipments, setShipments] = useState<Shipment[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortField, setSortField] = useState("trackingId");
-    const [sortDirection, setSortDirection] = useState("desc");
-    const [selectedShipments, setSelectedShipments] = useState([]);
+    const [sortField, setSortField] = useState<keyof Shipment | "trackingId">("trackingId");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+    const [selectedShipments, setSelectedShipments] = useState<string[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -52,7 +68,7 @@ export default function ShipmentList() {
     }, []);
 
     // Sorting
-    const handleSort = (field) => {
+    const handleSort = (field: keyof Shipment | "trackingId") => {
         if (sortField === field) {
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
         } else {
@@ -68,20 +84,20 @@ export default function ShipmentList() {
             shipment.trackingId?.toLowerCase().includes(searchTerm.toLowerCase())
         )
         .sort((a, b) => {
-            let valA = a[sortField];
-            let valB = b[sortField];
+            let valA: any = a[sortField as keyof Shipment];
+            let valB: any = b[sortField as keyof Shipment];
 
             if (sortField === "trackingId") {
                 valA = a.trackingId || "";
                 valB = b.trackingId || "";
             }
 
-            if (typeof valA === "string") {
+            if (typeof valA === "string" && typeof valB === "string") {
                 return sortDirection === "asc"
                     ? valA.localeCompare(valB)
                     : valB.localeCompare(valA);
             }
-            return sortDirection === "asc" ? valA - valB : valB - valA;
+            return sortDirection === "asc" ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
         });
 
     // Pagination
@@ -99,7 +115,7 @@ export default function ShipmentList() {
         }
     };
 
-    const toggleSelectShipment = (id) => {
+    const toggleSelectShipment = (id: string) => {
         if (selectedShipments.includes(id)) {
             setSelectedShipments(selectedShipments.filter((sid) => sid !== id));
         } else {
@@ -107,27 +123,22 @@ export default function ShipmentList() {
         }
     };
 
-    const handleViewShipment = (shipment) => {
+    const handleViewShipment = (shipment: Shipment) => {
         console.log("View shipment:", shipment);
-        // TODO: Open details dialog
     };
 
-    const handleEditShipment = (shipment) => {
+    const handleEditShipment = (shipment: Shipment) => {
         console.log("Edit shipment:", shipment);
     };
 
-    const handleDuplicateShipment = (shipment) => {
-        console.log("Duplicate shipment:", shipment);
-    };
-
-    const handleDeleteShipment = (shipment) => {
+    const handleDeleteShipment = (shipment: Shipment) => {
         if (confirm(`Delete shipment ${shipment.trackingId}?`)) {
             console.log("Delete shipment:", shipment);
         }
     };
 
-    const getStatusBadge = (status) => {
-        const colors = {
+    const getStatusBadge = (status: string) => {
+        const colors: any = {
             pending: "bg-yellow-100 text-yellow-800",
             "in-transit": "bg-blue-100 text-blue-800",
             delivered: "bg-green-100 text-green-800",
@@ -140,8 +151,8 @@ export default function ShipmentList() {
         );
     };
 
-    const getPriorityBadge = (priority) => {
-        const colors = {
+    const getPriorityBadge = (priority: string) => {
+        const colors: any = {
             express: "bg-red-100 text-red-700",
             standard: "bg-blue-100 text-blue-700",
             economy: "bg-gray-100 text-gray-700",
@@ -194,8 +205,8 @@ export default function ShipmentList() {
                                         <ArrowUpDown className={`ml-2 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
                                     )}
                                 </TableHead>
-                                <TableHead className="hidden md:table-cell">W   arehouse</TableHead>
-                                <TableHead className="hidden md:table-cell">Vender</TableHead>
+                                <TableHead className="hidden md:table-cell">Warehouse</TableHead>
+                                <TableHead className="hidden md:table-cell">Vendor</TableHead>
                                 <TableHead className="hidden lg:table-cell">Type</TableHead>
                                 <TableHead className="hidden lg:table-cell">Priority</TableHead>
                                 <TableHead>Status</TableHead>
@@ -214,12 +225,7 @@ export default function ShipmentList() {
                                             />
                                         </TableCell>
                                         <TableCell className="font-mono font-medium">
-                                            <div className="flex flex-col">
-                                                <span>{shipment.shipmentNumber}</span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {shipment.trackingId}
-                                                </span>
-                                            </div>
+                                            {shipment.trackingId}
                                         </TableCell>
                                         <TableCell>{shipment.customer}</TableCell>
                                         <TableCell className="hidden md:table-cell">

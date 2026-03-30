@@ -2,9 +2,8 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import axios from "axios";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,9 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { warehouseSchema } from "@/lib/validations/warehouse";
-
-type WarehouseFormValues = z.infer<typeof warehouseSchema>;
+import { warehouseSchema, WarehouseFormValues } from "@/lib/validations/warehouse";
 
 interface AddWarehouseFormProps {
   onSuccess?: () => void;
@@ -61,7 +58,13 @@ export default function AddWarehouseForm({
     try {
       const baseURI = process.env.NEXT_PUBLIC_BASE_URI || "http://localhost:4000";
       
-      await axios.post(`${baseURI}/api/warehouses`, values, {
+      // Ensure capacity is a number
+      const submitData = {
+        ...values,
+        capacity: Number(values.capacity)
+      };
+      
+      await axios.post(`${baseURI}/api/warehouses`, submitData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -74,12 +77,20 @@ export default function AddWarehouseForm({
 
       form.reset();
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
+      
+      let errorMessage = "Failed to add warehouse. Please try again.";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
         title: "❌ Error",
-        description: error.response?.data?.message || "Failed to add warehouse. Please try again.",
+        description: errorMessage,
       });
     }
   };
@@ -95,7 +106,7 @@ export default function AddWarehouseForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Warehouse Name</FormLabel>
+                  <FormLabel>Warehouse Name *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter warehouse name" {...field} />
                   </FormControl>
@@ -108,7 +119,7 @@ export default function AddWarehouseForm({
               name="code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Warehouse Code</FormLabel>
+                  <FormLabel>Warehouse Code *</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., WH005" {...field} />
                   </FormControl>
@@ -124,7 +135,7 @@ export default function AddWarehouseForm({
             name="address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Address</FormLabel>
+                <FormLabel>Address *</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter full address" {...field} />
                 </FormControl>
@@ -140,7 +151,7 @@ export default function AddWarehouseForm({
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>City *</FormLabel>
                   <FormControl>
                     <Input placeholder="City" {...field} />
                   </FormControl>
@@ -153,7 +164,7 @@ export default function AddWarehouseForm({
               name="state"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>State</FormLabel>
+                  <FormLabel>State *</FormLabel>
                   <FormControl>
                     <Input placeholder="State" {...field} />
                   </FormControl>
@@ -166,7 +177,7 @@ export default function AddWarehouseForm({
               name="zip"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ZIP Code</FormLabel>
+                  <FormLabel>ZIP Code *</FormLabel>
                   <FormControl>
                     <Input placeholder="ZIP" {...field} />
                   </FormControl>
@@ -183,8 +194,8 @@ export default function AddWarehouseForm({
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Warehouse Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FormLabel>Warehouse Type *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -208,13 +219,17 @@ export default function AddWarehouseForm({
               name="capacity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Capacity (sq ft)</FormLabel>
+                  <FormLabel>Total Capacity (sq ft) *</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
                       placeholder="500000" 
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? 0 : Number(e.target.value);
+                        field.onChange(value);
+                      }}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />

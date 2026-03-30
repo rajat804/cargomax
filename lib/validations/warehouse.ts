@@ -11,8 +11,10 @@ export const warehouseSchema = z.object({
   state: z.string().min(2, "State is required"),
   zip: z.string().min(4, "Valid ZIP code is required"),
   type: z.enum(["distribution", "storage", "fulfillment", "cross-dock", "cold-storage"]),
-  capacity: z.coerce.number().min(100, "Capacity must be at least 100 sq ft"),
+  capacity: z.number().min(100, "Capacity must be at least 100 sq ft"),
   phone: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   manager: z.string().optional(),
 });
+
+export type WarehouseFormValues = z.infer<typeof warehouseSchema>;

@@ -31,8 +31,8 @@ export default function ShipmentForm() {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
 
-    const [warehouses, setWarehouses] = useState([]);
-    const [vendors, setVendors] = useState([]);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [vendors, setVendors] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -58,6 +58,7 @@ export default function ShipmentForm() {
             setWarehouses(whRes.data.data || []);
             setVendors(venRes.data.data || []);
         } catch (error) {
+            console.error(error);
             toast({
                 variant: "destructive",
                 title: "Failed to load data",
@@ -95,20 +96,30 @@ export default function ShipmentForm() {
             });
 
             setIsOpen(false);
+            
             // Reset form
             setFormData({
-                customer: "", carrier: "", originWarehouse: "", destinationVendor: "",
-                type: "", priority: "", weight: "", items: "", value: ""
+                customer: "", 
+                carrier: "", 
+                originWarehouse: "", 
+                destinationVendor: "",
+                type: "", 
+                priority: "", 
+                weight: "", 
+                items: "", 
+                value: ""
             });
 
-            router.push("/shipments");   // list page pe jaane ke liye
+            router.push("/shipments");
 
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {   // ← Fixed: Added type 'any'
+            console.error("Submit Error:", error);
             toast({
                 variant: "destructive",
                 title: "❌ Failed to Create Shipment",
-                description: error.response?.data?.message || "Server error",
+                description: error.response?.data?.message || 
+                            error.message || 
+                            "Something went wrong on server",
             });
         }
     };
@@ -167,7 +178,7 @@ export default function ShipmentForm() {
                                 <SelectValue placeholder="Select origin warehouse" />
                             </SelectTrigger>
                             <SelectContent>
-                                {warehouses.map((wh) => (
+                                {warehouses.map((wh: any) => (
                                     <SelectItem key={wh._id} value={wh._id}>
                                         {wh.name} ({wh.code}) - {wh.city}, {wh.state}
                                     </SelectItem>
@@ -178,13 +189,13 @@ export default function ShipmentForm() {
 
                     {/* Destination Vendor */}
                     <div className="space-y-2">
-                        <Label> Vendor *</Label>
+                        <Label>Vendor *</Label>
                         <Select value={formData.destinationVendor} onValueChange={(v) => setFormData({ ...formData, destinationVendor: v })}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select destination vendor" />
                             </SelectTrigger>
                             <SelectContent>
-                                {vendors.map((ven) => (
+                                {vendors.map((ven: any) => (
                                     <SelectItem key={ven._id} value={ven._id}>
                                         {ven.companyName}
                                     </SelectItem>
@@ -260,7 +271,9 @@ export default function ShipmentForm() {
                         <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                             Cancel
                         </Button>
-                        <Button type="submit">Create Shipment</Button>
+                        <Button type="submit" disabled={loading}>
+                            {loading ? "Creating..." : "Create Shipment"}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

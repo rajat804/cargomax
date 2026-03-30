@@ -175,6 +175,21 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
       ],
     },
     {
+      title: "Team",
+      items: [
+        {
+          title: "Managers",
+          icon: Users,
+          href: "/managers",
+        },
+        {
+          title: "Add Manager",
+          icon: UserPlus,
+          href: "/managers/add",
+        },
+      ],
+    },
+    {
       title: "Orders",
       items: [
         {
@@ -247,7 +262,7 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
           icon: LifeBuoy,
           href: "/help",
         },
-          {
+        {
           title: "Contact",
           icon: ContactRound,
           href: "/contact",
@@ -261,7 +276,7 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
           title: "Chat",
           icon: MessageCircle,
           href: "/chat",
-        },     
+        },
         {
           title: "Support Tickets",
           icon: Ticket,
@@ -321,7 +336,7 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
                       ? "bg-accent text-accent-foreground"
                       : "text-foreground"
                   )}
-                   onClick={toggleSidebar}
+                  onClick={toggleSidebar}
                 >
                   <item.icon className="h-4 w-4" />
                   <span>{item.title}</span>
