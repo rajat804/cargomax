@@ -1,3 +1,5 @@
+"use client";
+
 import DashboardShellClient from "./DashboardShellClient";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
