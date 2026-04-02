@@ -28,9 +28,14 @@ import {
   Calculator,
   Shield,
   Info,
+  X,
+  AlertCircle,
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+
+// API Base URL
+const API_URL = process.env.NEXT_PUBLIC_BASE_URI || "http://localhost:5000"
 
 interface ShipmentItem {
   id: string
@@ -58,6 +63,12 @@ interface Address {
   country: string
   phone: string
   email: string
+}
+
+interface AlertState {
+  show: boolean
+  type: "success" | "error" | "warning" | "info"
+  message: string
 }
 
 export default function CreateShipmentPage() {
@@ -110,9 +121,26 @@ export default function CreateShipmentPage() {
   const [estimatedCost, setEstimatedCost] = useState(0)
   const [carrier, setCarrier] = useState("")
   const [service, setService] = useState("")
+  const [customerName, setCustomerName] = useState("")
+  const [customerEmail, setCustomerEmail] = useState("")
+  const [customerPhone, setCustomerPhone] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [alert, setAlert] = useState<AlertState>({
+    show: false,
+    type: "success",
+    message: "",
+  })
 
   const totalSteps = 5
   const progress = (currentStep / totalSteps) * 100
+
+  // Show alert function
+  const showAlert = (type: "success" | "error" | "warning" | "info", message: string) => {
+    setAlert({ show: true, type, message })
+    setTimeout(() => {
+      setAlert({ show: false, type: "success", message: "" })
+    }, 5000)
+  }
 
   const addItem = () => {
     const newItem: ShipmentItem = {
@@ -177,9 +205,213 @@ export default function CreateShipmentPage() {
     }
   }
 
-  const handleSubmit = () => {
-    // Handle shipment creation
-    console.log("Creating shipment...")
+  // Save as Draft
+  const saveAsDraft = async () => {
+    setIsLoading(true)
+    
+    const shipmentData = {
+      shipmentType,
+      priority,
+      pickupDate,
+      deliveryDate,
+      originAddress,
+      destinationAddress,
+      items,
+      specialInstructions,
+      insuranceRequired,
+      signatureRequired,
+      temperatureControlled,
+      fragile,
+      carrier,
+      service,
+      estimatedCost,
+      customerName,
+      customerEmail,
+      customerPhone,
+      status: "draft",
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/createshipments/draft`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(shipmentData),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        showAlert("success", "✅ Shipment saved as draft successfully!")
+      } else {
+        showAlert("error", `❌ Failed to save draft: ${data.message}`)
+      }
+    } catch (error) {
+      console.error("Save draft error:", error)
+      showAlert("error", "❌ Network error! Failed to save draft.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Create Shipment
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    // Validation
+    if (!customerName || !customerEmail || !customerPhone) {
+      showAlert("error", "❌ Please fill in customer details!")
+      setIsLoading(false)
+      return
+    }
+
+    if (!pickupDate) {
+      showAlert("error", "❌ Please select pickup date!")
+      setIsLoading(false)
+      return
+    }
+
+    if (items.length === 0 || !items[0].description) {
+      showAlert("error", "❌ Please add at least one item with description!")
+      setIsLoading(false)
+      return
+    }
+
+    const shipmentData = {
+      shipmentType,
+      priority,
+      pickupDate,
+      deliveryDate,
+      originAddress,
+      destinationAddress,
+      items,
+      specialInstructions,
+      insuranceRequired,
+      signatureRequired,
+      temperatureControlled,
+      fragile,
+      carrier,
+      service,
+      estimatedCost,
+      customerName,
+      customerEmail,
+      customerPhone,
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/createshipments/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(shipmentData),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        showAlert("success", `✅ Shipment created successfully! Tracking ID: ${data.data.trackingId}`)
+        
+        // Reset form after successful submission
+        setTimeout(() => {
+          setCurrentStep(1)
+          setCustomerName("")
+          setCustomerEmail("")
+          setCustomerPhone("")
+          setPickupDate(undefined)
+          setDeliveryDate(undefined)
+          setOriginAddress({
+            company: "",
+            contactName: "",
+            address1: "",
+            address2: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "US",
+            phone: "",
+            email: "",
+          })
+          setDestinationAddress({
+            company: "",
+            contactName: "",
+            address1: "",
+            address2: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "US",
+            phone: "",
+            email: "",
+          })
+          setItems([{
+            id: "1",
+            description: "",
+            quantity: 1,
+            weight: 0,
+            dimensions: { length: 0, width: 0, height: 0 },
+            value: 0,
+            category: "general",
+            hazardous: false,
+          }])
+          setSpecialInstructions("")
+          setInsuranceRequired(false)
+          setSignatureRequired(false)
+          setTemperatureControlled(false)
+          setFragile(false)
+          setCarrier("")
+          setService("")
+          setEstimatedCost(0)
+        }, 2000)
+      } else {
+        showAlert("error", `❌ Failed to create shipment: ${data.message}`)
+      }
+    } catch (error) {
+      console.error("Create shipment error:", error)
+      showAlert("error", "❌ Network error! Failed to create shipment.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Alert Component
+  const AlertComponent = () => {
+    if (!alert.show) return null
+
+    const alertStyles = {
+      success: "bg-green-50 border-green-500 text-green-800",
+      error: "bg-red-50 border-red-500 text-red-800",
+      warning: "bg-yellow-50 border-yellow-500 text-yellow-800",
+      info: "bg-blue-50 border-blue-500 text-blue-800",
+    }
+
+    const icons = {
+      success: <CheckCircle className="h-5 w-5 text-green-500" />,
+      error: <AlertCircle className="h-5 w-5 text-red-500" />,
+      warning: <AlertCircle className="h-5 w-5 text-yellow-500" />,
+      info: <Info className="h-5 w-5 text-blue-500" />,
+    }
+
+    return (
+      <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-right-5 duration-300">
+        <div className={cn("rounded-lg border p-4 shadow-lg min-w-[300px]", alertStyles[alert.type])}>
+          <div className="flex items-start gap-3">
+            {icons[alert.type]}
+            <div className="flex-1">
+              <p className="text-sm font-medium">{alert.message}</p>
+            </div>
+            <button
+              onClick={() => setAlert({ ...alert, show: false })}
+              className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 hover:bg-white/20"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderStepContent = () => {
@@ -187,6 +419,49 @@ export default function CreateShipmentPage() {
       case 1:
         return (
           <div className="space-y-6">
+            {/* Customer Details Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Customer Details
+                </CardTitle>
+                <CardDescription>Enter customer information for this shipment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Customer Name *</Label>
+                    <Input
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter customer name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Customer Email *</Label>
+                    <Input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="Enter customer email"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Customer Phone *</Label>
+                    <Input
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="Enter customer phone"
+                      required
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -262,7 +537,7 @@ export default function CreateShipmentPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Pickup Date</Label>
+                    <Label>Pickup Date *</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -564,7 +839,7 @@ export default function CreateShipmentPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Description</Label>
+                        <Label>Description *</Label>
                         <Input
                           value={item.description}
                           onChange={(e) => updateItem(item.id, "description", e.target.value)}
@@ -825,6 +1100,26 @@ export default function CreateShipmentPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
+                      <h4 className="font-medium mb-2">Customer Information</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Name:</span>
+                          <span className="font-medium">{customerName || "—"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Email:</span>
+                          <span>{customerEmail || "—"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Phone:</span>
+                          <span>{customerPhone || "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
                       <h4 className="font-medium mb-2">Shipment Summary</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -993,6 +1288,9 @@ export default function CreateShipmentPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
+      {/* Alert Component */}
+      <AlertComponent />
+
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">Create New Shipment</h1>
         <p className="text-muted-foreground mt-2">Follow the steps below to create and schedule your shipment</p>
@@ -1008,7 +1306,7 @@ export default function CreateShipmentPage() {
             <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
           </div>
           <Progress value={progress} className="mb-4" />
-          <div className="flex flex-wrap gap-2 text-nowrap  sm:justify-between text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-2 text-nowrap sm:justify-between text-xs text-muted-foreground">
             <span className={currentStep >= 1 ? "text-primary font-medium" : ""}>Shipment Type</span>
             <span className={currentStep >= 2 ? "text-primary font-medium" : ""}>Addresses</span>
             <span className={currentStep >= 3 ? "text-primary font-medium" : ""}>Package Details</span>
@@ -1027,14 +1325,14 @@ export default function CreateShipmentPage() {
           Previous
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={saveAsDraft} disabled={isLoading}>
             <Save className="h-4 w-4 mr-2" />
-            Save Draft
+            {isLoading ? "Saving..." : "Save Draft"}
           </Button>
           {currentStep === totalSteps ? (
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={isLoading}>
               <Send className="h-4 w-4 mr-2" />
-              Create Shipment
+              {isLoading ? "Creating..." : "Create Shipment"}
             </Button>
           ) : (
             <Button onClick={nextStep}>Next</Button>
