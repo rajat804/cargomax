@@ -40,6 +40,7 @@ import {
   Wrench,
   X,
   XSquare,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
@@ -81,6 +82,16 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
           title: "Fleet Status",
           icon: Activity,
           href: "/dashboard/fleet-status",
+        },
+      ],
+    },
+    {
+      title: "Attendance",
+      items: [
+        {
+          title: "Attendance",
+          icon: CalendarDays,
+          href: "/attendance",
         },
       ],
     },
