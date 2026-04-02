@@ -114,6 +114,11 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
           href: "/shipments/create",
         },
         {
+          title: "Show Create Shipment",
+          icon: PlusSquare,
+          href: "/shipments/show",
+        },
+        {
           title: "Delayed Shipments",
           icon: Clock,
           href: "/shipments/delayed",
