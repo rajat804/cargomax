@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,9 +42,11 @@ import {
   Phone,
   Mail,
   User,
-  AlertTriangle,
-  Thermometer,
   Shield,
+  Save,
+  X,
+  Plus,
+  Minus,
   PenSquare,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -104,6 +116,50 @@ interface Shipment {
   }>;
 }
 
+interface EditShipmentData {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  shipmentType: string;
+  priority: string;
+  pickupDate: string;
+  deliveryDate: string;
+  specialInstructions: string;
+  insuranceRequired: boolean;
+  signatureRequired: boolean;
+  temperatureControlled: boolean;
+  fragile: boolean;
+  carrier: string;
+  service: string;
+  status: string;
+  estimatedCost: number;
+  originAddress: {
+    company: string;
+    contactName: string;
+    address1: string;
+    address2: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone: string;
+    email: string;
+  };
+  destinationAddress: {
+    company: string;
+    contactName: string;
+    address1: string;
+    address2: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone: string;
+    email: string;
+  };
+  items: Array<any>;
+}
+
 export default function ShipmentsPage() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [filteredShipments, setFilteredShipments] = useState<Shipment[]>([]);
@@ -112,6 +168,51 @@ export default function ShipmentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm, setEditForm] = useState<EditShipmentData>({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    shipmentType: "standard",
+    priority: "standard",
+    pickupDate: "",
+    deliveryDate: "",
+    specialInstructions: "",
+    insuranceRequired: false,
+    signatureRequired: false,
+    temperatureControlled: false,
+    fragile: false,
+    carrier: "",
+    service: "",
+    status: "pending",
+    estimatedCost: 0,
+    originAddress: {
+      company: "",
+      contactName: "",
+      address1: "",
+      address2: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "US",
+      phone: "",
+      email: "",
+    },
+    destinationAddress: {
+      company: "",
+      contactName: "",
+      address1: "",
+      address2: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "US",
+      phone: "",
+      email: "",
+    },
+    items: [],
+  });
 
   // Fetch all shipments
   const fetchShipments = async () => {
@@ -144,9 +245,9 @@ export default function ShipmentsPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (shipment) =>
-          shipment.trackingId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          shipment.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          shipment.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+          (shipment.trackingId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (shipment.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (shipment.customerEmail || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -179,6 +280,96 @@ export default function ShipmentsPage() {
     }
   };
 
+  // Open Edit Modal
+  const openEditModal = (shipment: Shipment) => {
+    setSelectedShipment(shipment);
+    setEditForm({
+      customerName: shipment.customerName || "",
+      customerEmail: shipment.customerEmail || "",
+      customerPhone: shipment.customerPhone || "",
+      shipmentType: shipment.shipmentType || "standard",
+      priority: shipment.priority || "standard",
+      pickupDate: shipment.pickupDate || "",
+      deliveryDate: shipment.deliveryDate || "",
+      specialInstructions: shipment.specialInstructions || "",
+      insuranceRequired: shipment.insuranceRequired || false,
+      signatureRequired: shipment.signatureRequired || false,
+      temperatureControlled: shipment.temperatureControlled || false,
+      fragile: shipment.fragile || false,
+      carrier: shipment.carrier || "",
+      service: shipment.service || "",
+      status: shipment.status || "pending",
+      estimatedCost: shipment.estimatedCost || 0,
+      originAddress: {
+        company: shipment.originAddress?.company || "",
+        contactName: shipment.originAddress?.contactName || "",
+        address1: shipment.originAddress?.address1 || "",
+        address2: shipment.originAddress?.address2 || "",
+        city: shipment.originAddress?.city || "",
+        state: shipment.originAddress?.state || "",
+        zipCode: shipment.originAddress?.zipCode || "",
+        country: shipment.originAddress?.country || "US",
+        phone: shipment.originAddress?.phone || "",
+        email: shipment.originAddress?.email || "",
+      },
+      destinationAddress: {
+        company: shipment.destinationAddress?.company || "",
+        contactName: shipment.destinationAddress?.contactName || "",
+        address1: shipment.destinationAddress?.address1 || "",
+        address2: shipment.destinationAddress?.address2 || "",
+        city: shipment.destinationAddress?.city || "",
+        state: shipment.destinationAddress?.state || "",
+        zipCode: shipment.destinationAddress?.zipCode || "",
+        country: shipment.destinationAddress?.country || "US",
+        phone: shipment.destinationAddress?.phone || "",
+        email: shipment.destinationAddress?.email || "",
+      },
+      items: shipment.items?.map(item => ({
+        ...item,
+        quantity: item.quantity || 1,
+        weight: item.weight || 0,
+        value: item.value || 0,
+        dimensions: {
+          length: item.dimensions?.length || 0,
+          width: item.dimensions?.width || 0,
+          height: item.dimensions?.height || 0,
+        }
+      })) || [],
+    });
+    setShowEditModal(true);
+  };
+
+  // Update shipment
+  const updateShipment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/createshipments/update/${selectedShipment?._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("✅ Shipment updated successfully!");
+        setShowEditModal(false);
+        fetchShipments();
+      } else {
+        alert("❌ Failed to update shipment: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error updating shipment:", error);
+      alert("❌ Network error! Failed to update shipment.");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   // Calculate total cost breakdown
   const calculateTotalCost = (shipment: Shipment) => {
     const baseShipping = 15;
@@ -186,24 +377,24 @@ export default function ShipmentsPage() {
     let priorityCharge = 0;
     if (shipment.priority === "express") priorityCharge = 14.99;
     if (shipment.priority === "overnight") priorityCharge = 34.99;
-    
+
     const insuranceCharge = shipment.insuranceRequired ? (shipment.totalValue || 0) * 0.01 : 0;
     const signatureCharge = shipment.signatureRequired ? 5 : 0;
     const temperatureCharge = shipment.temperatureControlled ? 25 : 0;
     const fragileCharge = shipment.fragile ? 10 : 0;
-    
-    const total = baseShipping + weightCharge + priorityCharge + insuranceCharge + 
-                  signatureCharge + temperatureCharge + fragileCharge;
-    
+
+    const total = baseShipping + weightCharge + priorityCharge + insuranceCharge +
+      signatureCharge + temperatureCharge + fragileCharge;
+
     return {
-      baseShipping,
-      weightCharge,
-      priorityCharge,
-      insuranceCharge,
-      signatureCharge,
-      temperatureCharge,
-      fragileCharge,
-      total
+      baseShipping: baseShipping || 0,
+      weightCharge: weightCharge || 0,
+      priorityCharge: priorityCharge || 0,
+      insuranceCharge: insuranceCharge || 0,
+      signatureCharge: signatureCharge || 0,
+      temperatureCharge: temperatureCharge || 0,
+      fragileCharge: fragileCharge || 0,
+      total: total || 0
     };
   };
 
@@ -244,6 +435,15 @@ export default function ShipmentsPage() {
     pending: shipments.filter((s) => s.status === "pending").length,
     inTransit: shipments.filter((s) => s.status === "in_transit").length,
     delivered: shipments.filter((s) => s.status === "delivered").length,
+  };
+
+  // Calculate totals for edit form
+  const calculateEditTotalWeight = () => {
+    return editForm.items?.reduce((sum, item) => sum + ((item?.weight || 0) * (item?.quantity || 0)), 0) || 0;
+  };
+
+  const calculateEditTotalValue = () => {
+    return editForm.items?.reduce((sum, item) => sum + ((item?.value || 0) * (item?.quantity || 0)), 0) || 0;
   };
 
   return (
@@ -408,10 +608,12 @@ export default function ShipmentsPage() {
                         </TableCell>
                         <TableCell>{getStatusBadge(shipment.status)}</TableCell>
                         <TableCell>
-                          <span className="font-semibold text-green-600">${shipment.estimatedCost?.toFixed(2)}</span>
+                          <span className="font-semibold text-green-600">
+                            ${(shipment.estimatedCost || 0).toFixed(2)}
+                          </span>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {format(new Date(shipment.createdAt), "dd MMM yyyy")}
+                          {shipment.createdAt ? format(new Date(shipment.createdAt), "dd MMM yyyy") : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -425,6 +627,14 @@ export default function ShipmentsPage() {
                               className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditModal(shipment)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -446,11 +656,10 @@ export default function ShipmentsPage() {
         </Card>
       </div>
 
-      {/* Complete Details Modal */}
+      {/* Details Modal */}
       {showDetailsModal && selectedShipment && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-8">
           <div className="bg-white rounded-xl w-[900px] max-h-[90vh] overflow-y-auto shadow-2xl mx-4">
-            {/* Modal Header */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 rounded-t-xl sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div>
@@ -467,7 +676,6 @@ export default function ShipmentsPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Status and Priority Row */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-4">
                   <div>
@@ -485,11 +693,12 @@ export default function ShipmentsPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Created On</p>
-                  <p className="text-sm font-medium">{format(new Date(selectedShipment.createdAt), "dd MMM yyyy, hh:mm a")}</p>
+                  <p className="text-sm font-medium">
+                    {selectedShipment.createdAt ? format(new Date(selectedShipment.createdAt), "dd MMM yyyy, hh:mm a") : "N/A"}
+                  </p>
                 </div>
               </div>
 
-              {/* Customer Information */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <User className="h-5 w-5 text-blue-600" />
@@ -511,9 +720,7 @@ export default function ShipmentsPage() {
                 </div>
               </div>
 
-              {/* Origin & Destination */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Origin Address */}
                 <div className="border rounded-lg p-4 bg-blue-50/30">
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-green-600" />
@@ -531,7 +738,6 @@ export default function ShipmentsPage() {
                   </div>
                 </div>
 
-                {/* Destination Address */}
                 <div className="border rounded-lg p-4 bg-purple-50/30">
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-red-600" />
@@ -550,14 +756,13 @@ export default function ShipmentsPage() {
                 </div>
               </div>
 
-              {/* Dates */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="border rounded-lg p-4">
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-orange-600" />
                     Pickup Date
                   </h3>
-                  <p>{format(new Date(selectedShipment.pickupDate), "dd MMM yyyy")}</p>
+                  <p>{selectedShipment.pickupDate ? format(new Date(selectedShipment.pickupDate), "dd MMM yyyy") : "N/A"}</p>
                 </div>
                 <div className="border rounded-lg p-4">
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
@@ -568,11 +773,10 @@ export default function ShipmentsPage() {
                 </div>
               </div>
 
-              {/* Items List */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <Box className="h-5 w-5 text-purple-600" />
-                  Items ({selectedShipment.totalItems})
+                  Items ({selectedShipment.totalItems || 0})
                 </h3>
                 <div className="space-y-3">
                   {selectedShipment.items?.map((item, index) => (
@@ -612,29 +816,16 @@ export default function ShipmentsPage() {
                 </div>
               </div>
 
-              {/* Special Services */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <Shield className="h-5 w-5 text-blue-600" />
                   Special Services
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedShipment.insuranceRequired && (
-                    <Badge className="bg-green-100 text-green-700">✅ Insurance Coverage</Badge>
-                  )}
-                  {selectedShipment.signatureRequired && (
-                    <Badge className="bg-blue-100 text-blue-700">✍️ Signature Required</Badge>
-                  )}
-                  {selectedShipment.temperatureControlled && (
-                    <Badge className="bg-cyan-100 text-cyan-700">🌡️ Temperature Controlled</Badge>
-                  )}
-                  {selectedShipment.fragile && (
-                    <Badge className="bg-yellow-100 text-yellow-700">📦 Fragile Handling</Badge>
-                  )}
-                  {!selectedShipment.insuranceRequired && !selectedShipment.signatureRequired && 
-                   !selectedShipment.temperatureControlled && !selectedShipment.fragile && (
-                    <span className="text-gray-500">No special services selected</span>
-                  )}
+                  {selectedShipment.insuranceRequired && <Badge className="bg-green-100 text-green-700">✅ Insurance Coverage</Badge>}
+                  {selectedShipment.signatureRequired && <Badge className="bg-blue-100 text-blue-700">✍️ Signature Required</Badge>}
+                  {selectedShipment.temperatureControlled && <Badge className="bg-cyan-100 text-cyan-700">🌡️ Temperature Controlled</Badge>}
+                  {selectedShipment.fragile && <Badge className="bg-yellow-100 text-yellow-700">📦 Fragile Handling</Badge>}
                 </div>
                 {selectedShipment.carrier && (
                   <div className="mt-3 pt-3 border-t">
@@ -650,7 +841,6 @@ export default function ShipmentsPage() {
                 )}
               </div>
 
-              {/* Cost Breakdown */}
               <div className="border rounded-lg p-4 bg-gradient-to-r from-gray-50 to-gray-100">
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-600" />
@@ -662,46 +852,46 @@ export default function ShipmentsPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Base Shipping:</span>
-                        <span>${costs.baseShipping.toFixed(2)}</span>
+                        <span>${(costs.baseShipping || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>Weight Charge ({selectedShipment.totalWeight} lbs × $2.50):</span>
-                        <span>${costs.weightCharge.toFixed(2)}</span>
+                        <span>Weight Charge ({(selectedShipment.totalWeight || 0)} lbs × $2.50):</span>
+                        <span>${(costs.weightCharge || 0).toFixed(2)}</span>
                       </div>
-                      {costs.priorityCharge > 0 && (
+                      {(costs.priorityCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>{selectedShipment.priority === "express" ? "Express Service:" : "Overnight Service:"}</span>
-                          <span>${costs.priorityCharge.toFixed(2)}</span>
+                          <span>${(costs.priorityCharge || 0).toFixed(2)}</span>
                         </div>
                       )}
-                      {costs.insuranceCharge > 0 && (
+                      {(costs.insuranceCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span>Insurance ({selectedShipment.totalValue} × 1%):</span>
-                          <span>${costs.insuranceCharge.toFixed(2)}</span>
+                          <span>Insurance ({(selectedShipment.totalValue || 0)} × 1%):</span>
+                          <span>${(costs.insuranceCharge || 0).toFixed(2)}</span>
                         </div>
                       )}
-                      {costs.signatureCharge > 0 && (
+                      {(costs.signatureCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Signature Service:</span>
-                          <span>${costs.signatureCharge.toFixed(2)}</span>
+                          <span>${(costs.signatureCharge || 0).toFixed(2)}</span>
                         </div>
                       )}
-                      {costs.temperatureCharge > 0 && (
+                      {(costs.temperatureCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Temperature Control:</span>
-                          <span>${costs.temperatureCharge.toFixed(2)}</span>
+                          <span>${(costs.temperatureCharge || 0).toFixed(2)}</span>
                         </div>
                       )}
-                      {costs.fragileCharge > 0 && (
+                      {(costs.fragileCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Fragile Handling:</span>
-                          <span>${costs.fragileCharge.toFixed(2)}</span>
+                          <span>${(costs.fragileCharge || 0).toFixed(2)}</span>
                         </div>
                       )}
                       <div className="border-t pt-2 mt-2">
                         <div className="flex justify-between font-bold text-lg">
                           <span>Total Estimated Cost:</span>
-                          <span className="text-green-600">${costs.total.toFixed(2)}</span>
+                          <span className="text-green-600">${(costs.total || 0).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -709,41 +899,276 @@ export default function ShipmentsPage() {
                 })()}
               </div>
 
-              {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <Weight className="h-5 w-5 text-blue-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Total Weight</p>
-                  <p className="font-bold">{selectedShipment.totalWeight?.toFixed(2)} lbs</p>
+                  <p className="font-bold">{(selectedShipment.totalWeight || 0).toFixed(2)} lbs</p>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
                   <DollarSign className="h-5 w-5 text-green-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Total Value</p>
-                  <p className="font-bold">${selectedShipment.totalValue?.toFixed(2)}</p>
+                  <p className="font-bold">${(selectedShipment.totalValue || 0).toFixed(2)}</p>
                 </div>
                 <div className="text-center p-3 bg-purple-50 rounded-lg">
                   <Box className="h-5 w-5 text-purple-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Total Items</p>
-                  <p className="font-bold">{selectedShipment.totalItems}</p>
+                  <p className="font-bold">{selectedShipment.totalItems || 0}</p>
                 </div>
                 <div className="text-center p-3 bg-orange-50 rounded-lg">
                   <Truck className="h-5 w-5 text-orange-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Estimated Cost</p>
-                  <p className="font-bold text-green-600">${selectedShipment.estimatedCost?.toFixed(2)}</p>
+                  <p className="font-bold text-green-600">${(selectedShipment.estimatedCost || 0).toFixed(2)}</p>
                 </div>
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="border-t p-4 rounded-b-xl bg-gray-50 flex justify-end gap-3 sticky bottom-0">
-              <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
-                Close
-              </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button variant="outline" onClick={() => setShowDetailsModal(false)}>Close</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                setShowDetailsModal(false);
+                openEditModal(selectedShipment);
+              }}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Shipment
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedShipment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-xl w-[1100px] max-h-[90vh] overflow-y-auto shadow-2xl mx-4">
+            <div className="bg-gradient-to-r from-green-600 to-blue-600 px-6 py-4 rounded-t-xl sticky top-0 z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Edit Shipment</h2>
+                  <p className="text-green-200 text-sm">Tracking ID: {selectedShipment.trackingId}</p>
+                </div>
+                <button onClick={() => setShowEditModal(false)} className="text-white/80 hover:text-white">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={updateShipment} className="p-6 space-y-6">
+              {/* Customer Information */}
+              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-blue-700">
+                  <User className="h-5 w-5" /> Customer Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Customer Name *</Label>
+                    <Input value={editForm.customerName} onChange={(e) => setEditForm({ ...editForm, customerName: e.target.value })} required className="mt-1" />
+                  </div>
+                  <div>
+                    <Label>Customer Email *</Label>
+                    <Input type="email" value={editForm.customerEmail} onChange={(e) => setEditForm({ ...editForm, customerEmail: e.target.value })} required className="mt-1" />
+                  </div>
+                  <div>
+                    <Label>Customer Phone *</Label>
+                    <Input value={editForm.customerPhone} onChange={(e) => setEditForm({ ...editForm, customerPhone: e.target.value })} required className="mt-1" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipment Details */}
+              <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-purple-700">
+                  <Package className="h-5 w-5" /> Shipment Details
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Shipment Type *</Label>
+                    <Select value={editForm.shipmentType} onValueChange={(value) => setEditForm({ ...editForm, shipmentType: value })}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">📦 Standard Package</SelectItem>
+                        <SelectItem value="document">📄 Document Envelope</SelectItem>
+                        <SelectItem value="freight">🚛 Freight/Pallet</SelectItem>
+                        <SelectItem value="bulk">🏭 Bulk Cargo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Priority *</Label>
+                    <Select value={editForm.priority} onValueChange={(value) => setEditForm({ ...editForm, priority: value })}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">📦 Standard</SelectItem>
+                        <SelectItem value="express">🚀 Express</SelectItem>
+                        <SelectItem value="overnight">🌙 Overnight</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={editForm.status} onValueChange={(value) => setEditForm({ ...editForm, status: value })}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">📝 Draft</SelectItem>
+                        <SelectItem value="pending">⏳ Pending</SelectItem>
+                        <SelectItem value="confirmed">✅ Confirmed</SelectItem>
+                        <SelectItem value="in_transit">🚚 In Transit</SelectItem>
+                        <SelectItem value="delivered">📦 Delivered</SelectItem>
+                        <SelectItem value="cancelled">❌ Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Carrier</Label>
+                    <Select value={editForm.carrier} onValueChange={(value) => setEditForm({ ...editForm, carrier: value })}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Select carrier" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fedex">FedEx</SelectItem>
+                        <SelectItem value="ups">UPS</SelectItem>
+                        <SelectItem value="dhl">DHL</SelectItem>
+                        <SelectItem value="usps">USPS</SelectItem>
+                        <SelectItem value="cargomax">CargoMax</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Service Level</Label>
+                    <Select value={editForm.service} onValueChange={(value) => setEditForm({ ...editForm, service: value })}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Select service" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ground">Ground</SelectItem>
+                        <SelectItem value="air">Air</SelectItem>
+                        <SelectItem value="express">Express</SelectItem>
+                        <SelectItem value="overnight">Overnight</SelectItem>
+                        <SelectItem value="same-day">Same Day</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-orange-700">
+                  <Calendar className="h-5 w-5" /> Shipping Dates
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Pickup Date *</Label>
+                    <Input type="date" value={editForm.pickupDate ? editForm.pickupDate.split('T')[0] : ''} onChange={(e) => setEditForm({ ...editForm, pickupDate: e.target.value })} required className="mt-1" />
+                  </div>
+                  <div>
+                    <Label>Delivery Date</Label>
+                    <Input type="date" value={editForm.deliveryDate ? editForm.deliveryDate.split('T')[0] : ''} onChange={(e) => setEditForm({ ...editForm, deliveryDate: e.target.value })} className="mt-1" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Origin Address */}
+              <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-green-700">
+                  <MapPin className="h-5 w-5" /> Origin Address
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>Company *</Label><Input value={editForm.originAddress?.company || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, company: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Contact Name *</Label><Input value={editForm.originAddress?.contactName || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, contactName: e.target.value } })} required className="mt-1" /></div>
+                  <div className="md:col-span-2"><Label>Address Line 1 *</Label><Input value={editForm.originAddress?.address1 || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, address1: e.target.value } })} required className="mt-1" /></div>
+                  <div className="md:col-span-2"><Label>Address Line 2</Label><Input value={editForm.originAddress?.address2 || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, address2: e.target.value } })} className="mt-1" /></div>
+                  <div><Label>City *</Label><Input value={editForm.originAddress?.city || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, city: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>State *</Label><Input value={editForm.originAddress?.state || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, state: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>ZIP Code *</Label><Input value={editForm.originAddress?.zipCode || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, zipCode: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Country *</Label><Input value={editForm.originAddress?.country || 'US'} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, country: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Phone *</Label><Input value={editForm.originAddress?.phone || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, phone: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Email *</Label><Input type="email" value={editForm.originAddress?.email || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, email: e.target.value } })} required className="mt-1" /></div>
+                </div>
+              </div>
+
+              {/* Destination Address */}
+              <div className="border-2 border-red-200 rounded-lg p-4 bg-red-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-red-700">
+                  <MapPin className="h-5 w-5" /> Destination Address
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>Company *</Label><Input value={editForm.destinationAddress?.company || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, company: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Contact Name *</Label><Input value={editForm.destinationAddress?.contactName || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, contactName: e.target.value } })} required className="mt-1" /></div>
+                  <div className="md:col-span-2"><Label>Address Line 1 *</Label><Input value={editForm.destinationAddress?.address1 || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, address1: e.target.value } })} required className="mt-1" /></div>
+                  <div className="md:col-span-2"><Label>Address Line 2</Label><Input value={editForm.destinationAddress?.address2 || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, address2: e.target.value } })} className="mt-1" /></div>
+                  <div><Label>City *</Label><Input value={editForm.destinationAddress?.city || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, city: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>State *</Label><Input value={editForm.destinationAddress?.state || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, state: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>ZIP Code *</Label><Input value={editForm.destinationAddress?.zipCode || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, zipCode: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Country *</Label><Input value={editForm.destinationAddress?.country || 'US'} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, country: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Phone *</Label><Input value={editForm.destinationAddress?.phone || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, phone: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Email *</Label><Input type="email" value={editForm.destinationAddress?.email || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, email: e.target.value } })} required className="mt-1" /></div>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div className="border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-indigo-700">
+                  <Box className="h-5 w-5" /> Items ({editForm.items?.length || 0})
+                </h3>
+                {editForm.items?.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4 mb-4 bg-white">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium">Item {index + 1}</h4>
+                      {editForm.items.length > 1 && (
+                        <Button type="button" variant="outline" size="sm" onClick={() => {
+                          const newItems = [...editForm.items];
+                          newItems.splice(index, 1);
+                          setEditForm({ ...editForm, items: newItems });
+                        }}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2"><Label>Description *</Label><Input value={item.description} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].description = e.target.value; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
+                      <div><Label>Quantity *</Label><Input type="number" min="1" value={item.quantity || 1} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].quantity = parseInt(e.target.value) || 1; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
+                      <div><Label>Weight (lbs) *</Label><Input type="number" step="0.1" min="0" value={item.weight || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].weight = parseFloat(e.target.value) || 0; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
+                      <div><Label>Value ($) *</Label><Input type="number" step="0.01" min="0" value={item.value || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].value = parseFloat(e.target.value) || 0; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
+                      <div><Label>Category</Label><Select value={item.category} onValueChange={(value) => { const newItems = [...editForm.items]; newItems[index].category = value; setEditForm({ ...editForm, items: newItems }); }}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="general">General Merchandise</SelectItem><SelectItem value="electronics">Electronics</SelectItem><SelectItem value="clothing">Clothing</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="food">Food & Beverages</SelectItem><SelectItem value="medical">Medical Supplies</SelectItem><SelectItem value="automotive">Automotive Parts</SelectItem></SelectContent></Select></div>
+                      <div className="flex items-center space-x-2 pt-6"><input type="checkbox" id={`hazardous-${index}`} checked={item.hazardous || false} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].hazardous = e.target.checked; setEditForm({ ...editForm, items: newItems }); }} className="h-4 w-4 rounded border-gray-300" /><Label htmlFor={`hazardous-${index}`}>Hazardous Material</Label></div>
+                    </div>
+                    <div className="mt-4"><Label>Dimensions (inches)</Label><div className="grid grid-cols-3 gap-2 mt-1"><Input type="number" step="0.1" placeholder="Length" value={item.dimensions?.length || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, length: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /><Input type="number" step="0.1" placeholder="Width" value={item.dimensions?.width || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, width: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /><Input type="number" step="0.1" placeholder="Height" value={item.dimensions?.height || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, height: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /></div></div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => { setEditForm({ ...editForm, items: [...editForm.items, { description: "", quantity: 1, weight: 0, dimensions: { length: 0, width: 0, height: 0 }, value: 0, category: "general", hazardous: false }] }); }} className="w-full mt-2"><Plus className="h-4 w-4 mr-2" />Add Another Item</Button>
+              </div>
+
+              {/* Special Services */}
+              <div className="border-2 border-teal-200 rounded-lg p-4 bg-teal-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-teal-700"><Shield className="h-5 w-5" /> Special Services</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Insurance Coverage</Label><Switch checked={editForm.insuranceRequired} onCheckedChange={(checked) => setEditForm({ ...editForm, insuranceRequired: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Signature Required</Label><Switch checked={editForm.signatureRequired} onCheckedChange={(checked) => setEditForm({ ...editForm, signatureRequired: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Temperature Controlled</Label><Switch checked={editForm.temperatureControlled} onCheckedChange={(checked) => setEditForm({ ...editForm, temperatureControlled: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Fragile Handling</Label><Switch checked={editForm.fragile} onCheckedChange={(checked) => setEditForm({ ...editForm, fragile: checked })} /></div>
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div className="border-2 border-yellow-200 rounded-lg p-4 bg-yellow-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-yellow-700"><PenSquare className="h-5 w-5" /> Special Instructions</h3>
+                <Textarea value={editForm.specialInstructions || ''} onChange={(e) => setEditForm({ ...editForm, specialInstructions: e.target.value })} placeholder="Enter any special handling instructions..." rows={4} className="mt-1" />
+              </div>
+
+              {/* Cost Summary */}
+              <div className="border-2 border-pink-200 rounded-lg p-4 bg-pink-50/30">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-pink-700"><DollarSign className="h-5 w-5" /> Cost Summary</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-white rounded-lg"><Weight className="h-5 w-5 text-blue-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Weight</p><p className="font-bold">{calculateEditTotalWeight().toFixed(2)} lbs</p></div>
+                  <div className="text-center p-3 bg-white rounded-lg"><DollarSign className="h-5 w-5 text-green-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Value</p><p className="font-bold">${calculateEditTotalValue().toFixed(2)}</p></div>
+                  <div className="text-center p-3 bg-white rounded-lg"><Box className="h-5 w-5 text-purple-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Items</p><p className="font-bold">{editForm.items?.length || 0}</p></div>
+                  <div className="text-center p-3 bg-white rounded-lg"><Truck className="h-5 w-5 text-orange-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Estimated Cost</p><p className="font-bold text-green-600">${(editForm.estimatedCost || 0).toFixed(2)}</p></div>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>
+                <Button type="submit" disabled={editLoading} className="bg-green-600 hover:bg-green-700"><Save className="h-4 w-4 mr-2" />{editLoading ? "Saving..." : "Save Changes"}</Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
