@@ -16,6 +16,30 @@ interface EmployeeProfileProps {
 }
 
 export default function EmployeeProfile({ employee, onEdit }: EmployeeProfileProps) {
+  // Helper function to get badge variant based on employment status
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
+    switch(status) {
+      case 'Active': return 'success';
+      case 'On Leave': return 'warning';
+      case 'Terminated': return 'destructive';
+      case 'Resigned': return 'destructive';
+      case 'Retired': return 'secondary';
+      default: return 'secondary';
+    }
+  };
+
+  // Helper function to get badge variant for employment type
+  const getTypeVariant = (type: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
+    switch(type) {
+      case 'Permanent': return 'success';
+      case 'Contract': return 'warning';
+      case 'Intern': return 'info' as any; // Use 'default' instead of 'info'
+      case 'Temporary': return 'secondary';
+      case 'Consultant': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
@@ -32,8 +56,12 @@ export default function EmployeeProfile({ employee, onEdit }: EmployeeProfilePro
                 </h1>
                 <p className="text-gray-600 mt-1">{employee.designation}</p>
                 <div className="flex gap-2 mt-2">
-                  <Badge variant="success">{employee.employmentStatus}</Badge>
-                  <Badge variant="info">{employee.employmentType}</Badge>
+                  <Badge variant={getStatusVariant(employee.employmentStatus)}>
+                    {employee.employmentStatus}
+                  </Badge>
+                  <Badge variant={getTypeVariant(employee.employmentType)}>
+                    {employee.employmentType}
+                  </Badge>
                 </div>
               </div>
             </div>
