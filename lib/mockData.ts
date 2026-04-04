@@ -1,3 +1,4 @@
+// lib/mockData.ts
 import { Employee, Department, Document, LifecycleEvent, DashboardStats } from '@/types';
 
 export const departments: Department[] = [
@@ -16,11 +17,11 @@ export const employees: Employee[] = [
     firstName: 'John',
     lastName: 'Smith',
     email: 'john.smith@company.com',
-    phone: '+91 98765 43210',
+    phone: '+1 234-567-8900',
     dateOfBirth: '1980-05-15',
     gender: 'Male',
     maritalStatus: 'Married',
-    nationality: 'Indian',
+    nationality: 'American',
     hireDate: '2015-03-20',
     confirmationDate: '2015-06-20',
     employmentStatus: 'Active',
@@ -31,15 +32,15 @@ export const employees: Employee[] = [
     designation: 'CEO',
     address: {
       street: '123 Main St',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      country: 'India',
-      zipCode: '400001'
+      city: 'New York',
+      state: 'NY',
+      country: 'USA',
+      zipCode: '10001'
     },
     emergencyContact: {
       name: 'Jane Smith',
       relationship: 'Spouse',
-      phone: '+91 98765 43211'
+      phone: '+1 234-567-8999'
     }
   },
   {
@@ -48,11 +49,11 @@ export const employees: Employee[] = [
     firstName: 'Sarah',
     lastName: 'Johnson',
     email: 'sarah.johnson@company.com',
-    phone: '+91 98765 43212',
+    phone: '+1 234-567-8901',
     dateOfBirth: '1985-08-22',
     gender: 'Female',
     maritalStatus: 'Married',
-    nationality: 'Indian',
+    nationality: 'American',
     hireDate: '2017-06-10',
     confirmationDate: '2017-09-10',
     employmentStatus: 'Active',
@@ -65,10 +66,10 @@ export const employees: Employee[] = [
     managerName: 'John Smith',
     address: {
       street: '456 Oak Ave',
-      city: 'Delhi',
-      state: 'Delhi',
-      country: 'India',
-      zipCode: '110001'
+      city: 'New York',
+      state: 'NY',
+      country: 'USA',
+      zipCode: '10002'
     }
   },
   {
@@ -77,11 +78,11 @@ export const employees: Employee[] = [
     firstName: 'Mike',
     lastName: 'Chen',
     email: 'mike.chen@company.com',
-    phone: '+91 98765 43213',
+    phone: '+1 234-567-8902',
     dateOfBirth: '1988-03-10',
     gender: 'Male',
     maritalStatus: 'Single',
-    nationality: 'Indian',
+    nationality: 'Chinese',
     hireDate: '2018-01-15',
     confirmationDate: '2018-04-15',
     employmentStatus: 'Active',
@@ -94,10 +95,10 @@ export const employees: Employee[] = [
     managerName: 'John Smith',
     address: {
       street: '789 Pine Rd',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      country: 'India',
-      zipCode: '560001'
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      zipCode: '94105'
     }
   },
   {
@@ -106,11 +107,11 @@ export const employees: Employee[] = [
     firstName: 'Lisa',
     lastName: 'Anderson',
     email: 'lisa.anderson@company.com',
-    phone: '+91 98765 43214',
+    phone: '+1 234-567-8903',
     dateOfBirth: '1990-11-30',
     gender: 'Female',
     maritalStatus: 'Divorced',
-    nationality: 'Indian',
+    nationality: 'British',
     hireDate: '2019-04-01',
     confirmationDate: '2019-07-01',
     employmentStatus: 'Active',
@@ -128,11 +129,11 @@ export const employees: Employee[] = [
     firstName: 'David',
     lastName: 'Brown',
     email: 'david.brown@company.com',
-    phone: '+91 98765 43215',
+    phone: '+1 234-567-8904',
     dateOfBirth: '1987-07-19',
     gender: 'Male',
     maritalStatus: 'Married',
-    nationality: 'Indian',
+    nationality: 'Canadian',
     hireDate: '2016-09-12',
     confirmationDate: '2016-12-12',
     employmentStatus: 'Active',
@@ -146,6 +147,7 @@ export const employees: Employee[] = [
   }
 ];
 
+// Generate 45 engineering employees
 for (let i = 6; i <= 50; i++) {
   const roles = ['Software Engineer', 'Senior Software Engineer', 'Tech Lead', 'QA Engineer', 'DevOps Engineer'];
   const randomRole = roles[Math.floor(Math.random() * roles.length)];
@@ -156,11 +158,11 @@ for (let i = 6; i <= 50; i++) {
     firstName: `Engineer${i}`,
     lastName: `Last${i}`,
     email: `engineer${i}@company.com`,
-    phone: `+91 98765 ${43210 + i}`,
+    phone: `+1 234-567-${8900 + i}`,
     dateOfBirth: `199${Math.floor(Math.random() * 10)}-${Math.floor(Math.random() * 12) + 1}-${Math.floor(Math.random() * 28) + 1}`,
     gender: Math.random() > 0.7 ? 'Female' : 'Male',
     maritalStatus: Math.random() > 0.6 ? 'Married' : 'Single',
-    nationality: 'Indian',
+    nationality: 'American',
     hireDate: `202${Math.floor(Math.random() * 3)}-${Math.floor(Math.random() * 12) + 1}-${Math.floor(Math.random() * 28) + 1}`,
     employmentStatus: Math.random() > 0.9 ? 'On Leave' : 'Active',
     employmentType: Math.random() > 0.8 ? 'Contract' : 'Permanent',
