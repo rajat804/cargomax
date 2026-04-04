@@ -47,7 +47,7 @@ interface ShipmentItem {
     width: number
     height: number
   }
-  value: number
+  value: number // in INR
   category: string
   hazardous: boolean
 }
@@ -97,7 +97,7 @@ export default function CreateShipmentPage() {
     city: "",
     state: "",
     zipCode: "",
-    country: "US",
+    country: "IN",
     phone: "",
     email: "",
   })
@@ -109,7 +109,7 @@ export default function CreateShipmentPage() {
     city: "",
     state: "",
     zipCode: "",
-    country: "US",
+    country: "IN",
     phone: "",
     email: "",
   })
@@ -133,6 +133,16 @@ export default function CreateShipmentPage() {
 
   const totalSteps = 5
   const progress = (currentStep / totalSteps) * 100
+
+  // INR Conversion rates (example rates - adjust as needed)
+  const BASE_RATE_INR = 125 // ₹125 per kg base rate
+  const EXPRESS_MULTIPLIER = 2
+  const OVERNIGHT_MULTIPLIER = 3
+  const INSURANCE_RATE = 0.01 // 1% of value
+  const SIGNATURE_FEE_INR = 415 // ₹415
+  const TEMP_CONTROL_FEE_INR = 2075 // ₹2075
+  const FRAGILE_FEE_INR = 830 // ₹830
+  const BASE_SHIPPING_INR = 1245 // ₹1245
 
   // Show alert function
   const showAlert = (type: "success" | "error" | "warning" | "info", message: string) => {
@@ -184,13 +194,36 @@ export default function CreateShipmentPage() {
   }
 
   const calculateEstimate = () => {
-    const baseRate = 2.5
     const totalWeight = calculateTotalWeight()
     const totalValue = calculateTotalValue()
-    const priorityMultiplier = priority === "express" ? 2 : priority === "overnight" ? 3 : 1
-    const insuranceRate = insuranceRequired ? totalValue * 0.01 : 0
-    const estimate = totalWeight * baseRate * priorityMultiplier + insuranceRate + 15
-    setEstimatedCost(estimate)
+    
+    // Priority multiplier
+    let priorityMultiplier = 1
+    let priorityFee = 0
+    if (priority === "express") {
+      priorityMultiplier = EXPRESS_MULTIPLIER
+      priorityFee = 1245 // ₹1245 extra for express
+    } else if (priority === "overnight") {
+      priorityMultiplier = OVERNIGHT_MULTIPLIER
+      priorityFee = 2905 // ₹2905 extra for overnight
+    }
+    
+    // Weight charge: ₹125 per kg
+    const weightCharge = totalWeight * BASE_RATE_INR
+    
+    // Insurance: 1% of total value
+    const insuranceCharge = insuranceRequired ? totalValue * INSURANCE_RATE : 0
+    
+    // Additional services
+    const signatureCharge = signatureRequired ? SIGNATURE_FEE_INR : 0
+    const tempCharge = temperatureControlled ? TEMP_CONTROL_FEE_INR : 0
+    const fragileCharge = fragile ? FRAGILE_FEE_INR : 0
+    
+    // Total estimate
+    const estimate = BASE_SHIPPING_INR + weightCharge + priorityFee + insuranceCharge + 
+                     signatureCharge + tempCharge + fragileCharge
+    
+    setEstimatedCost(Math.round(estimate))
   }
 
   const nextStep = () => {
@@ -203,6 +236,16 @@ export default function CreateShipmentPage() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
+  }
+
+  // Format currency in INR
+  const formatINR = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount)
   }
 
   // Save as Draft
@@ -228,6 +271,7 @@ export default function CreateShipmentPage() {
       customerName,
       customerEmail,
       customerPhone,
+      currency: "INR",
       status: "draft",
     }
 
@@ -298,6 +342,7 @@ export default function CreateShipmentPage() {
       customerName,
       customerEmail,
       customerPhone,
+      currency: "INR",
     }
 
     try {
@@ -330,7 +375,7 @@ export default function CreateShipmentPage() {
             city: "",
             state: "",
             zipCode: "",
-            country: "US",
+            country: "IN",
             phone: "",
             email: "",
           })
@@ -342,7 +387,7 @@ export default function CreateShipmentPage() {
             city: "",
             state: "",
             zipCode: "",
-            country: "US",
+            country: "IN",
             phone: "",
             email: "",
           })
@@ -506,7 +551,7 @@ export default function CreateShipmentPage() {
                           <p className="text-sm text-muted-foreground">5-7 business days</p>
                         </div>
                       </div>
-                      <Badge variant="secondary">$15.99</Badge>
+                      <Badge variant="secondary">{formatINR(1245)}</Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-2">
@@ -518,7 +563,7 @@ export default function CreateShipmentPage() {
                           <p className="text-sm text-muted-foreground">2-3 business days</p>
                         </div>
                       </div>
-                      <Badge variant="secondary">$29.99</Badge>
+                      <Badge variant="secondary">{formatINR(2490)}</Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-2">
@@ -530,7 +575,7 @@ export default function CreateShipmentPage() {
                           <p className="text-sm text-muted-foreground">Next business day</p>
                         </div>
                       </div>
-                      <Badge variant="secondary">$49.99</Badge>
+                      <Badge variant="secondary">{formatINR(4150)}</Badge>
                     </div>
                   </RadioGroup>
                 </div>
@@ -647,7 +692,7 @@ export default function CreateShipmentPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="origin-state">State/Province</Label>
+                    <Label htmlFor="origin-state">State</Label>
                     <Select
                       value={originAddress.state}
                       onValueChange={(value) => setOriginAddress({ ...originAddress, state: value })}
@@ -656,21 +701,22 @@ export default function CreateShipmentPage() {
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="CA">California</SelectItem>
-                        <SelectItem value="NY">New York</SelectItem>
-                        <SelectItem value="TX">Texas</SelectItem>
-                        <SelectItem value="FL">Florida</SelectItem>
-                        <SelectItem value="IL">Illinois</SelectItem>
+                        <SelectItem value="MH">Maharashtra</SelectItem>
+                        <SelectItem value="DL">Delhi</SelectItem>
+                        <SelectItem value="KA">Karnataka</SelectItem>
+                        <SelectItem value="TN">Tamil Nadu</SelectItem>
+                        <SelectItem value="WB">West Bengal</SelectItem>
+                        <SelectItem value="GJ">Gujarat</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="origin-zip">ZIP/Postal Code</Label>
+                    <Label htmlFor="origin-zip">PIN Code</Label>
                     <Input
                       id="origin-zip"
                       value={originAddress.zipCode}
                       onChange={(e) => setOriginAddress({ ...originAddress, zipCode: e.target.value })}
-                      placeholder="Enter ZIP code"
+                      placeholder="Enter PIN code"
                     />
                   </div>
                 </div>
@@ -760,7 +806,7 @@ export default function CreateShipmentPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dest-state">State/Province</Label>
+                    <Label htmlFor="dest-state">State</Label>
                     <Select
                       value={destinationAddress.state}
                       onValueChange={(value) => setDestinationAddress({ ...destinationAddress, state: value })}
@@ -769,21 +815,22 @@ export default function CreateShipmentPage() {
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="CA">California</SelectItem>
-                        <SelectItem value="NY">New York</SelectItem>
-                        <SelectItem value="TX">Texas</SelectItem>
-                        <SelectItem value="FL">Florida</SelectItem>
-                        <SelectItem value="IL">Illinois</SelectItem>
+                        <SelectItem value="MH">Maharashtra</SelectItem>
+                        <SelectItem value="DL">Delhi</SelectItem>
+                        <SelectItem value="KA">Karnataka</SelectItem>
+                        <SelectItem value="TN">Tamil Nadu</SelectItem>
+                        <SelectItem value="WB">West Bengal</SelectItem>
+                        <SelectItem value="GJ">Gujarat</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dest-zip">ZIP/Postal Code</Label>
+                    <Label htmlFor="dest-zip">PIN Code</Label>
                     <Input
                       id="dest-zip"
                       value={destinationAddress.zipCode}
                       onChange={(e) => setDestinationAddress({ ...destinationAddress, zipCode: e.target.value })}
-                      placeholder="Enter ZIP code"
+                      placeholder="Enter PIN code"
                     />
                   </div>
                 </div>
@@ -876,7 +923,7 @@ export default function CreateShipmentPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Weight (lbs)</Label>
+                        <Label>Weight (kg)</Label>
                         <Input
                           type="number"
                           min="0"
@@ -886,11 +933,11 @@ export default function CreateShipmentPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Value ($)</Label>
+                        <Label>Value (₹)</Label>
                         <Input
                           type="number"
                           min="0"
-                          step="0.01"
+                          step="1"
                           value={item.value}
                           onChange={(e) => updateItem(item.id, "value", Number.parseFloat(e.target.value) || 0)}
                         />
@@ -908,13 +955,13 @@ export default function CreateShipmentPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Dimensions (inches)</Label>
+                      <Label>Dimensions (cm)</Label>
                       <div className="grid grid-cols-3 gap-2">
                         <Input
                           type="number"
                           min="0"
                           step="0.1"
-                          placeholder="Length"
+                          placeholder="Length (cm)"
                           value={item.dimensions.length}
                           onChange={(e) =>
                             updateItem(item.id, "dimensions", {
@@ -927,7 +974,7 @@ export default function CreateShipmentPage() {
                           type="number"
                           min="0"
                           step="0.1"
-                          placeholder="Width"
+                          placeholder="Width (cm)"
                           value={item.dimensions.width}
                           onChange={(e) =>
                             updateItem(item.id, "dimensions", {
@@ -940,7 +987,7 @@ export default function CreateShipmentPage() {
                           type="number"
                           min="0"
                           step="0.1"
-                          placeholder="Height"
+                          placeholder="Height (cm)"
                           value={item.dimensions.height}
                           onChange={(e) =>
                             updateItem(item.id, "dimensions", {
@@ -965,11 +1012,11 @@ export default function CreateShipmentPage() {
                     <div className="text-sm text-muted-foreground">Total Items</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{calculateTotalWeight().toFixed(1)} lbs</div>
+                    <div className="text-2xl font-bold">{calculateTotalWeight().toFixed(1)} kg</div>
                     <div className="text-sm text-muted-foreground">Total Weight</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">${calculateTotalValue().toFixed(2)}</div>
+                    <div className="text-2xl font-bold">{formatINR(calculateTotalValue())}</div>
                     <div className="text-sm text-muted-foreground">Total Value</div>
                   </div>
                 </div>
@@ -994,7 +1041,7 @@ export default function CreateShipmentPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Insurance Coverage</Label>
+                        <Label>Insurance Coverage (1% of value)</Label>
                         <p className="text-sm text-muted-foreground">Protect your shipment against loss or damage</p>
                       </div>
                       <Switch checked={insuranceRequired} onCheckedChange={setInsuranceRequired} />
@@ -1004,6 +1051,7 @@ export default function CreateShipmentPage() {
                       <div className="space-y-0.5">
                         <Label>Signature Required</Label>
                         <p className="text-sm text-muted-foreground">Require signature upon delivery</p>
+                        <p className="text-xs text-muted-foreground">Additional {formatINR(SIGNATURE_FEE_INR)}</p>
                       </div>
                       <Switch checked={signatureRequired} onCheckedChange={setSignatureRequired} />
                     </div>
@@ -1012,6 +1060,7 @@ export default function CreateShipmentPage() {
                       <div className="space-y-0.5">
                         <Label>Temperature Controlled</Label>
                         <p className="text-sm text-muted-foreground">Maintain specific temperature range</p>
+                        <p className="text-xs text-muted-foreground">Additional {formatINR(TEMP_CONTROL_FEE_INR)}</p>
                       </div>
                       <Switch checked={temperatureControlled} onCheckedChange={setTemperatureControlled} />
                     </div>
@@ -1020,6 +1069,7 @@ export default function CreateShipmentPage() {
                       <div className="space-y-0.5">
                         <Label>Fragile Handling</Label>
                         <p className="text-sm text-muted-foreground">Special care for delicate items</p>
+                        <p className="text-xs text-muted-foreground">Additional {formatINR(FRAGILE_FEE_INR)}</p>
                       </div>
                       <Switch checked={fragile} onCheckedChange={setFragile} />
                     </div>
@@ -1033,10 +1083,12 @@ export default function CreateShipmentPage() {
                           <SelectValue placeholder="Select carrier" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="fedex">FedEx</SelectItem>
-                          <SelectItem value="ups">UPS</SelectItem>
-                          <SelectItem value="dhl">DHL</SelectItem>
-                          <SelectItem value="usps">USPS</SelectItem>
+                          <SelectItem value="bluedart">Blue Dart</SelectItem>
+                          <SelectItem value="delhivery">Delhivery</SelectItem>
+                          <SelectItem value="dtdc">DTDC</SelectItem>
+                          <SelectItem value="fedex">FedEx India</SelectItem>
+                          <SelectItem value="dhl">DHL India</SelectItem>
+                          <SelectItem value="xpressbees">XpressBees</SelectItem>
                           <SelectItem value="cargomax">CargoMax Fleet</SelectItem>
                         </SelectContent>
                       </Select>
@@ -1049,11 +1101,11 @@ export default function CreateShipmentPage() {
                           <SelectValue placeholder="Select service" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ground">Ground</SelectItem>
-                          <SelectItem value="air">Air</SelectItem>
-                          <SelectItem value="express">Express</SelectItem>
+                          <SelectItem value="ground">Ground (3-5 days)</SelectItem>
+                          <SelectItem value="air">Air (2-3 days)</SelectItem>
+                          <SelectItem value="express">Express (1-2 days)</SelectItem>
                           <SelectItem value="overnight">Overnight</SelectItem>
-                          <SelectItem value="same-day">Same Day</SelectItem>
+                          <SelectItem value="same-day">Same Day (Metro cities)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1077,7 +1129,7 @@ export default function CreateShipmentPage() {
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     Additional services may affect shipping cost and delivery time. Review the cost estimate in the next
-                    step.
+                    step. All prices are in Indian Rupees (₹).
                   </AlertDescription>
                 </Alert>
               </CardContent>
@@ -1136,11 +1188,11 @@ export default function CreateShipmentPage() {
                         </div>
                         <div className="flex justify-between">
                           <span>Total Weight:</span>
-                          <span>{calculateTotalWeight().toFixed(1)} lbs</span>
+                          <span>{calculateTotalWeight().toFixed(1)} kg</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Total Value:</span>
-                          <span>${calculateTotalValue().toFixed(2)}</span>
+                          <span>{formatINR(calculateTotalValue())}</span>
                         </div>
                       </div>
                     </div>
@@ -1155,7 +1207,7 @@ export default function CreateShipmentPage() {
                           <p className="text-muted-foreground">
                             {originAddress.company || "Origin Company"}
                             <br />
-                            {originAddress.city}, {originAddress.state} {originAddress.zipCode}
+                            {originAddress.city}, {originAddress.state} - {originAddress.zipCode}
                           </p>
                         </div>
                         <div>
@@ -1163,7 +1215,7 @@ export default function CreateShipmentPage() {
                           <p className="text-muted-foreground">
                             {destinationAddress.company || "Destination Company"}
                             <br />
-                            {destinationAddress.city}, {destinationAddress.state} {destinationAddress.zipCode}
+                            {destinationAddress.city}, {destinationAddress.state} - {destinationAddress.zipCode}
                           </p>
                         </div>
                       </div>
@@ -1177,25 +1229,25 @@ export default function CreateShipmentPage() {
                         {insuranceRequired && (
                           <div className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span>Insurance Coverage</span>
+                            <span>Insurance Coverage (1% of value)</span>
                           </div>
                         )}
                         {signatureRequired && (
                           <div className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span>Signature Required</span>
+                            <span>Signature Required (+{formatINR(SIGNATURE_FEE_INR)})</span>
                           </div>
                         )}
                         {temperatureControlled && (
                           <div className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span>Temperature Controlled</span>
+                            <span>Temperature Controlled (+{formatINR(TEMP_CONTROL_FEE_INR)})</span>
                           </div>
                         )}
                         {fragile && (
                           <div className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span>Fragile Handling</span>
+                            <span>Fragile Handling (+{formatINR(FRAGILE_FEE_INR)})</span>
                           </div>
                         )}
                         {!insuranceRequired && !signatureRequired && !temperatureControlled && !fragile && (
@@ -1208,58 +1260,61 @@ export default function CreateShipmentPage() {
                   <div className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Cost Breakdown</CardTitle>
+                        <CardTitle className="text-lg">Cost Breakdown (INR)</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex justify-between">
                           <span>Base Shipping:</span>
-                          <span>$15.00</span>
+                          <span>{formatINR(BASE_SHIPPING_INR)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Weight Charge:</span>
-                          <span>${(calculateTotalWeight() * 2.5).toFixed(2)}</span>
+                          <span>Weight Charge ({calculateTotalWeight().toFixed(1)} kg @ ₹{BASE_RATE_INR}/kg):</span>
+                          <span>{formatINR(calculateTotalWeight() * BASE_RATE_INR)}</span>
                         </div>
                         {priority === "express" && (
                           <div className="flex justify-between">
                             <span>Express Service:</span>
-                            <span>$14.99</span>
+                            <span>{formatINR(1245)}</span>
                           </div>
                         )}
                         {priority === "overnight" && (
                           <div className="flex justify-between">
                             <span>Overnight Service:</span>
-                            <span>$34.99</span>
+                            <span>{formatINR(2905)}</span>
                           </div>
                         )}
                         {insuranceRequired && (
                           <div className="flex justify-between">
-                            <span>Insurance:</span>
-                            <span>${(calculateTotalValue() * 0.01).toFixed(2)}</span>
+                            <span>Insurance (1% of {formatINR(calculateTotalValue())}):</span>
+                            <span>{formatINR(calculateTotalValue() * 0.01)}</span>
                           </div>
                         )}
                         {signatureRequired && (
                           <div className="flex justify-between">
                             <span>Signature Service:</span>
-                            <span>$5.00</span>
+                            <span>{formatINR(SIGNATURE_FEE_INR)}</span>
                           </div>
                         )}
                         {temperatureControlled && (
                           <div className="flex justify-between">
                             <span>Temperature Control:</span>
-                            <span>$25.00</span>
+                            <span>{formatINR(TEMP_CONTROL_FEE_INR)}</span>
                           </div>
                         )}
                         {fragile && (
                           <div className="flex justify-between">
                             <span>Fragile Handling:</span>
-                            <span>$10.00</span>
+                            <span>{formatINR(FRAGILE_FEE_INR)}</span>
                           </div>
                         )}
                         <Separator />
                         <div className="flex justify-between font-medium text-lg">
                           <span>Total Estimated Cost:</span>
-                          <span>${estimatedCost.toFixed(2)}</span>
+                          <span className="text-green-600 font-bold">{formatINR(estimatedCost)}</span>
                         </div>
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                          *GST @ 18% will be applied extra
+                        </p>
                       </CardContent>
                     </Card>
 
@@ -1271,7 +1326,8 @@ export default function CreateShipmentPage() {
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        This is an estimate. Final cost may vary based on actual dimensions and carrier rates.
+                        This is an estimate. Final cost may vary based on actual dimensions, carrier rates, and applicable taxes.
+                        All prices are in Indian Rupees (₹).
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -1287,7 +1343,7 @@ export default function CreateShipmentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
       {/* Alert Component */}
       <AlertComponent />
 
