@@ -1,4 +1,3 @@
-// types/index.ts
 export interface Employee {
   id: string;
   employeeId: string;
@@ -11,20 +10,17 @@ export interface Employee {
   maritalStatus: 'Single' | 'Married' | 'Divorced' | 'Widowed';
   nationality: string;
   profilePicture?: string;
-  
   hireDate: string;
   confirmationDate?: string;
   terminationDate?: string;
   employmentStatus: 'Active' | 'On Leave' | 'Terminated' | 'Resigned' | 'Retired';
   employmentType: 'Permanent' | 'Contract' | 'Intern' | 'Temporary' | 'Consultant';
-  
   departmentId: string;
   departmentName: string;
   designationId: string;
   designation: string;
   reportingTo?: string;
   managerName?: string;
-  
   address?: {
     street: string;
     city: string;
@@ -32,7 +28,6 @@ export interface Employee {
     country: string;
     zipCode: string;
   };
-  
   emergencyContact?: {
     name: string;
     relationship: string;
