@@ -480,8 +480,8 @@ export default function RevenueAnalysisPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percentage }) =>
-                          `${name}: ${percentage}%`
+                        label={({ name }) =>
+                          `${name}`
                         }
                         outerRadius={80}
                         fill="#8884d8"
