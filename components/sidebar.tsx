@@ -38,6 +38,9 @@ import {
   Users,
   Warehouse,
   Wrench,
+  FolderTree,
+  FileText,
+  GitBranch,
   CalendarDays,
   X,
   XSquare,
@@ -202,6 +205,36 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
           title: "Add Manager",
           icon: UserPlus,
           href: "/managers/add",
+        },
+      ],
+    },
+    {
+      title: "Employee Management",
+      items: [
+        {
+          icon: Users,
+          title: 'Employees',
+          href: '/employees',
+        },
+        {
+          icon: Building2,
+          title: 'Departments',
+          href: '/departments',
+        },
+        {
+          icon: FolderTree,
+          title: 'Hierarchy',
+          href: '/hierarchy',
+        },
+        {
+          icon: FileText,
+          title: 'Documents',
+          href: '/docu',
+        },
+        {
+          icon: GitBranch,
+          title: 'Lifecycle',
+          href: '/lifecycle',
         },
       ],
     },
