@@ -10,7 +10,7 @@ export interface Employee {
   gender: 'Male' | 'Female' | 'Other';
   maritalStatus: 'Single' | 'Married' | 'Divorced' | 'Widowed';
   nationality: string;
-  profilePicture?: string;
+  profilePicture?: string; // Optional is fine
   
   hireDate: string;
   confirmationDate?: string;
