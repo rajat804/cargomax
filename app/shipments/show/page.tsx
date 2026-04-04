@@ -53,6 +53,16 @@ import { format } from "date-fns";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URI || "http://localhost:4000";
 
+// INR Constants
+const BASE_RATE_INR = 125; // ₹125 per kg
+const EXPRESS_FEE_INR = 1245; // ₹1245
+const OVERNIGHT_FEE_INR = 2905; // ₹2905
+const INSURANCE_RATE = 0.01; // 1% of value
+const SIGNATURE_FEE_INR = 415; // ₹415
+const TEMP_CONTROL_FEE_INR = 2075; // ₹2075
+const FRAGILE_FEE_INR = 830; // ₹830
+const BASE_SHIPPING_INR = 1245; // ₹1245
+
 interface Shipment {
   _id: string;
   trackingId: string;
@@ -195,7 +205,7 @@ export default function ShipmentsPage() {
       city: "",
       state: "",
       zipCode: "",
-      country: "US",
+      country: "IN",
       phone: "",
       email: "",
     },
@@ -207,12 +217,22 @@ export default function ShipmentsPage() {
       city: "",
       state: "",
       zipCode: "",
-      country: "US",
+      country: "IN",
       phone: "",
       email: "",
     },
     items: [],
   });
+
+  // Format currency in INR
+  const formatINR = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
 
   // Fetch all shipments
   const fetchShipments = async () => {
@@ -308,7 +328,7 @@ export default function ShipmentsPage() {
         city: shipment.originAddress?.city || "",
         state: shipment.originAddress?.state || "",
         zipCode: shipment.originAddress?.zipCode || "",
-        country: shipment.originAddress?.country || "US",
+        country: shipment.originAddress?.country || "IN",
         phone: shipment.originAddress?.phone || "",
         email: shipment.originAddress?.email || "",
       },
@@ -320,7 +340,7 @@ export default function ShipmentsPage() {
         city: shipment.destinationAddress?.city || "",
         state: shipment.destinationAddress?.state || "",
         zipCode: shipment.destinationAddress?.zipCode || "",
-        country: shipment.destinationAddress?.country || "US",
+        country: shipment.destinationAddress?.country || "IN",
         phone: shipment.destinationAddress?.phone || "",
         email: shipment.destinationAddress?.email || "",
       },
@@ -370,31 +390,33 @@ export default function ShipmentsPage() {
     }
   };
 
-  // Calculate total cost breakdown
+  // Calculate total cost breakdown in INR
   const calculateTotalCost = (shipment: Shipment) => {
-    const baseShipping = 15;
-    const weightCharge = (shipment.totalWeight || 0) * 2.5;
+    const totalWeight = shipment.totalWeight || 0;
+    const totalValue = shipment.totalValue || 0;
+    
+    const weightCharge = totalWeight * BASE_RATE_INR;
     let priorityCharge = 0;
-    if (shipment.priority === "express") priorityCharge = 14.99;
-    if (shipment.priority === "overnight") priorityCharge = 34.99;
+    if (shipment.priority === "express") priorityCharge = EXPRESS_FEE_INR;
+    if (shipment.priority === "overnight") priorityCharge = OVERNIGHT_FEE_INR;
 
-    const insuranceCharge = shipment.insuranceRequired ? (shipment.totalValue || 0) * 0.01 : 0;
-    const signatureCharge = shipment.signatureRequired ? 5 : 0;
-    const temperatureCharge = shipment.temperatureControlled ? 25 : 0;
-    const fragileCharge = shipment.fragile ? 10 : 0;
+    const insuranceCharge = shipment.insuranceRequired ? totalValue * INSURANCE_RATE : 0;
+    const signatureCharge = shipment.signatureRequired ? SIGNATURE_FEE_INR : 0;
+    const temperatureCharge = shipment.temperatureControlled ? TEMP_CONTROL_FEE_INR : 0;
+    const fragileCharge = shipment.fragile ? FRAGILE_FEE_INR : 0;
 
-    const total = baseShipping + weightCharge + priorityCharge + insuranceCharge +
+    const total = BASE_SHIPPING_INR + weightCharge + priorityCharge + insuranceCharge +
       signatureCharge + temperatureCharge + fragileCharge;
 
     return {
-      baseShipping: baseShipping || 0,
-      weightCharge: weightCharge || 0,
-      priorityCharge: priorityCharge || 0,
-      insuranceCharge: insuranceCharge || 0,
-      signatureCharge: signatureCharge || 0,
-      temperatureCharge: temperatureCharge || 0,
-      fragileCharge: fragileCharge || 0,
-      total: total || 0
+      baseShipping: BASE_SHIPPING_INR,
+      weightCharge: weightCharge,
+      priorityCharge: priorityCharge,
+      insuranceCharge: insuranceCharge,
+      signatureCharge: signatureCharge,
+      temperatureCharge: temperatureCharge,
+      fragileCharge: fragileCharge,
+      total: total
     };
   };
 
@@ -609,7 +631,7 @@ export default function ShipmentsPage() {
                         <TableCell>{getStatusBadge(shipment.status)}</TableCell>
                         <TableCell>
                           <span className="font-semibold text-green-600">
-                            ${(shipment.estimatedCost || 0).toFixed(2)}
+                            {formatINR(shipment.estimatedCost || 0)}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm">
@@ -732,7 +754,7 @@ export default function ShipmentsPage() {
                     <p><span className="font-medium">Address:</span> {selectedShipment.originAddress?.address1}</p>
                     {selectedShipment.originAddress?.address2 && <p>{selectedShipment.originAddress.address2}</p>}
                     <p><span className="font-medium">City:</span> {selectedShipment.originAddress?.city}</p>
-                    <p><span className="font-medium">State/ZIP:</span> {selectedShipment.originAddress?.state} - {selectedShipment.originAddress?.zipCode}</p>
+                    <p><span className="font-medium">State/PIN:</span> {selectedShipment.originAddress?.state} - {selectedShipment.originAddress?.zipCode}</p>
                     <p><span className="font-medium">Phone:</span> {selectedShipment.originAddress?.phone}</p>
                     <p><span className="font-medium">Email:</span> {selectedShipment.originAddress?.email}</p>
                   </div>
@@ -749,7 +771,7 @@ export default function ShipmentsPage() {
                     <p><span className="font-medium">Address:</span> {selectedShipment.destinationAddress?.address1}</p>
                     {selectedShipment.destinationAddress?.address2 && <p>{selectedShipment.destinationAddress.address2}</p>}
                     <p><span className="font-medium">City:</span> {selectedShipment.destinationAddress?.city}</p>
-                    <p><span className="font-medium">State/ZIP:</span> {selectedShipment.destinationAddress?.state} - {selectedShipment.destinationAddress?.zipCode}</p>
+                    <p><span className="font-medium">State/PIN:</span> {selectedShipment.destinationAddress?.state} - {selectedShipment.destinationAddress?.zipCode}</p>
                     <p><span className="font-medium">Phone:</span> {selectedShipment.destinationAddress?.phone}</p>
                     <p><span className="font-medium">Email:</span> {selectedShipment.destinationAddress?.email}</p>
                   </div>
@@ -792,11 +814,11 @@ export default function ShipmentsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Weight</p>
-                          <p>{item.weight} lbs</p>
+                          <p>{item.weight} kg</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Value</p>
-                          <p>${item.value}</p>
+                          <p>{formatINR(item.value)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Category</p>
@@ -804,7 +826,7 @@ export default function ShipmentsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Dimensions</p>
-                          <p>{item.dimensions?.length}×{item.dimensions?.width}×{item.dimensions?.height} in</p>
+                          <p>{item.dimensions?.length}×{item.dimensions?.width}×{item.dimensions?.height} cm</p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-xs text-gray-500">Hazardous</p>
@@ -844,7 +866,7 @@ export default function ShipmentsPage() {
               <div className="border rounded-lg p-4 bg-gradient-to-r from-gray-50 to-gray-100">
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-600" />
-                  Cost Breakdown
+                  Cost Breakdown (INR)
                 </h3>
                 {(() => {
                   const costs = calculateTotalCost(selectedShipment);
@@ -852,47 +874,48 @@ export default function ShipmentsPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Base Shipping:</span>
-                        <span>${(costs.baseShipping || 0).toFixed(2)}</span>
+                        <span>{formatINR(costs.baseShipping)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>Weight Charge ({(selectedShipment.totalWeight || 0)} lbs × $2.50):</span>
-                        <span>${(costs.weightCharge || 0).toFixed(2)}</span>
+                        <span>Weight Charge ({(selectedShipment.totalWeight || 0).toFixed(2)} kg × ₹{BASE_RATE_INR}/kg):</span>
+                        <span>{formatINR(costs.weightCharge)}</span>
                       </div>
                       {(costs.priorityCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>{selectedShipment.priority === "express" ? "Express Service:" : "Overnight Service:"}</span>
-                          <span>${(costs.priorityCharge || 0).toFixed(2)}</span>
+                          <span>{formatINR(costs.priorityCharge)}</span>
                         </div>
                       )}
                       {(costs.insuranceCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span>Insurance ({(selectedShipment.totalValue || 0)} × 1%):</span>
-                          <span>${(costs.insuranceCharge || 0).toFixed(2)}</span>
+                          <span>Insurance ({formatINR(selectedShipment.totalValue || 0)} × 1%):</span>
+                          <span>{formatINR(costs.insuranceCharge)}</span>
                         </div>
                       )}
                       {(costs.signatureCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Signature Service:</span>
-                          <span>${(costs.signatureCharge || 0).toFixed(2)}</span>
+                          <span>{formatINR(costs.signatureCharge)}</span>
                         </div>
                       )}
                       {(costs.temperatureCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Temperature Control:</span>
-                          <span>${(costs.temperatureCharge || 0).toFixed(2)}</span>
+                          <span>{formatINR(costs.temperatureCharge)}</span>
                         </div>
                       )}
                       {(costs.fragileCharge || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Fragile Handling:</span>
-                          <span>${(costs.fragileCharge || 0).toFixed(2)}</span>
+                          <span>{formatINR(costs.fragileCharge)}</span>
                         </div>
                       )}
                       <div className="border-t pt-2 mt-2">
                         <div className="flex justify-between font-bold text-lg">
                           <span>Total Estimated Cost:</span>
-                          <span className="text-green-600">${(costs.total || 0).toFixed(2)}</span>
+                          <span className="text-green-600">{formatINR(costs.total)}</span>
                         </div>
+                        <p className="text-xs text-gray-500 text-center mt-2">*GST @ 18% will be applied extra</p>
                       </div>
                     </div>
                   );
@@ -903,12 +926,12 @@ export default function ShipmentsPage() {
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <Weight className="h-5 w-5 text-blue-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Total Weight</p>
-                  <p className="font-bold">{(selectedShipment.totalWeight || 0).toFixed(2)} lbs</p>
+                  <p className="font-bold">{(selectedShipment.totalWeight || 0).toFixed(2)} kg</p>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
                   <DollarSign className="h-5 w-5 text-green-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Total Value</p>
-                  <p className="font-bold">${(selectedShipment.totalValue || 0).toFixed(2)}</p>
+                  <p className="font-bold">{formatINR(selectedShipment.totalValue || 0)}</p>
                 </div>
                 <div className="text-center p-3 bg-purple-50 rounded-lg">
                   <Box className="h-5 w-5 text-purple-600 mx-auto mb-1" />
@@ -918,7 +941,7 @@ export default function ShipmentsPage() {
                 <div className="text-center p-3 bg-orange-50 rounded-lg">
                   <Truck className="h-5 w-5 text-orange-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-500">Estimated Cost</p>
-                  <p className="font-bold text-green-600">${(selectedShipment.estimatedCost || 0).toFixed(2)}</p>
+                  <p className="font-bold text-green-600">{formatINR(selectedShipment.estimatedCost || 0)}</p>
                 </div>
               </div>
             </div>
@@ -1023,10 +1046,12 @@ export default function ShipmentsPage() {
                     <Select value={editForm.carrier} onValueChange={(value) => setEditForm({ ...editForm, carrier: value })}>
                       <SelectTrigger className="mt-1"><SelectValue placeholder="Select carrier" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fedex">FedEx</SelectItem>
-                        <SelectItem value="ups">UPS</SelectItem>
-                        <SelectItem value="dhl">DHL</SelectItem>
-                        <SelectItem value="usps">USPS</SelectItem>
+                        <SelectItem value="bluedart">Blue Dart</SelectItem>
+                        <SelectItem value="delhivery">Delhivery</SelectItem>
+                        <SelectItem value="dtdc">DTDC</SelectItem>
+                        <SelectItem value="fedex">FedEx India</SelectItem>
+                        <SelectItem value="dhl">DHL India</SelectItem>
+                        <SelectItem value="xpressbees">XpressBees</SelectItem>
                         <SelectItem value="cargomax">CargoMax</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1036,9 +1061,9 @@ export default function ShipmentsPage() {
                     <Select value={editForm.service} onValueChange={(value) => setEditForm({ ...editForm, service: value })}>
                       <SelectTrigger className="mt-1"><SelectValue placeholder="Select service" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ground">Ground</SelectItem>
-                        <SelectItem value="air">Air</SelectItem>
-                        <SelectItem value="express">Express</SelectItem>
+                        <SelectItem value="ground">Ground (3-5 days)</SelectItem>
+                        <SelectItem value="air">Air (2-3 days)</SelectItem>
+                        <SelectItem value="express">Express (1-2 days)</SelectItem>
                         <SelectItem value="overnight">Overnight</SelectItem>
                         <SelectItem value="same-day">Same Day</SelectItem>
                       </SelectContent>
@@ -1076,8 +1101,8 @@ export default function ShipmentsPage() {
                   <div className="md:col-span-2"><Label>Address Line 2</Label><Input value={editForm.originAddress?.address2 || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, address2: e.target.value } })} className="mt-1" /></div>
                   <div><Label>City *</Label><Input value={editForm.originAddress?.city || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, city: e.target.value } })} required className="mt-1" /></div>
                   <div><Label>State *</Label><Input value={editForm.originAddress?.state || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, state: e.target.value } })} required className="mt-1" /></div>
-                  <div><Label>ZIP Code *</Label><Input value={editForm.originAddress?.zipCode || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, zipCode: e.target.value } })} required className="mt-1" /></div>
-                  <div><Label>Country *</Label><Input value={editForm.originAddress?.country || 'US'} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, country: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>PIN Code *</Label><Input value={editForm.originAddress?.zipCode || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, zipCode: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Country *</Label><Input value={editForm.originAddress?.country || 'IN'} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, country: e.target.value } })} required className="mt-1" /></div>
                   <div><Label>Phone *</Label><Input value={editForm.originAddress?.phone || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, phone: e.target.value } })} required className="mt-1" /></div>
                   <div><Label>Email *</Label><Input type="email" value={editForm.originAddress?.email || ''} onChange={(e) => setEditForm({ ...editForm, originAddress: { ...editForm.originAddress, email: e.target.value } })} required className="mt-1" /></div>
                 </div>
@@ -1095,8 +1120,8 @@ export default function ShipmentsPage() {
                   <div className="md:col-span-2"><Label>Address Line 2</Label><Input value={editForm.destinationAddress?.address2 || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, address2: e.target.value } })} className="mt-1" /></div>
                   <div><Label>City *</Label><Input value={editForm.destinationAddress?.city || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, city: e.target.value } })} required className="mt-1" /></div>
                   <div><Label>State *</Label><Input value={editForm.destinationAddress?.state || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, state: e.target.value } })} required className="mt-1" /></div>
-                  <div><Label>ZIP Code *</Label><Input value={editForm.destinationAddress?.zipCode || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, zipCode: e.target.value } })} required className="mt-1" /></div>
-                  <div><Label>Country *</Label><Input value={editForm.destinationAddress?.country || 'US'} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, country: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>PIN Code *</Label><Input value={editForm.destinationAddress?.zipCode || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, zipCode: e.target.value } })} required className="mt-1" /></div>
+                  <div><Label>Country *</Label><Input value={editForm.destinationAddress?.country || 'IN'} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, country: e.target.value } })} required className="mt-1" /></div>
                   <div><Label>Phone *</Label><Input value={editForm.destinationAddress?.phone || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, phone: e.target.value } })} required className="mt-1" /></div>
                   <div><Label>Email *</Label><Input type="email" value={editForm.destinationAddress?.email || ''} onChange={(e) => setEditForm({ ...editForm, destinationAddress: { ...editForm.destinationAddress, email: e.target.value } })} required className="mt-1" /></div>
                 </div>
@@ -1124,12 +1149,12 @@ export default function ShipmentsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2"><Label>Description *</Label><Input value={item.description} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].description = e.target.value; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
                       <div><Label>Quantity *</Label><Input type="number" min="1" value={item.quantity || 1} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].quantity = parseInt(e.target.value) || 1; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
-                      <div><Label>Weight (lbs) *</Label><Input type="number" step="0.1" min="0" value={item.weight || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].weight = parseFloat(e.target.value) || 0; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
-                      <div><Label>Value ($) *</Label><Input type="number" step="0.01" min="0" value={item.value || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].value = parseFloat(e.target.value) || 0; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
+                      <div><Label>Weight (kg) *</Label><Input type="number" step="0.1" min="0" value={item.weight || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].weight = parseFloat(e.target.value) || 0; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
+                      <div><Label>Value (₹) *</Label><Input type="number" step="1" min="0" value={item.value || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].value = parseFloat(e.target.value) || 0; setEditForm({ ...editForm, items: newItems }); }} required className="mt-1" /></div>
                       <div><Label>Category</Label><Select value={item.category} onValueChange={(value) => { const newItems = [...editForm.items]; newItems[index].category = value; setEditForm({ ...editForm, items: newItems }); }}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="general">General Merchandise</SelectItem><SelectItem value="electronics">Electronics</SelectItem><SelectItem value="clothing">Clothing</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="food">Food & Beverages</SelectItem><SelectItem value="medical">Medical Supplies</SelectItem><SelectItem value="automotive">Automotive Parts</SelectItem></SelectContent></Select></div>
                       <div className="flex items-center space-x-2 pt-6"><input type="checkbox" id={`hazardous-${index}`} checked={item.hazardous || false} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].hazardous = e.target.checked; setEditForm({ ...editForm, items: newItems }); }} className="h-4 w-4 rounded border-gray-300" /><Label htmlFor={`hazardous-${index}`}>Hazardous Material</Label></div>
                     </div>
-                    <div className="mt-4"><Label>Dimensions (inches)</Label><div className="grid grid-cols-3 gap-2 mt-1"><Input type="number" step="0.1" placeholder="Length" value={item.dimensions?.length || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, length: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /><Input type="number" step="0.1" placeholder="Width" value={item.dimensions?.width || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, width: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /><Input type="number" step="0.1" placeholder="Height" value={item.dimensions?.height || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, height: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /></div></div>
+                    <div className="mt-4"><Label>Dimensions (cm)</Label><div className="grid grid-cols-3 gap-2 mt-1"><Input type="number" step="0.1" placeholder="Length" value={item.dimensions?.length || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, length: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /><Input type="number" step="0.1" placeholder="Width" value={item.dimensions?.width || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, width: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /><Input type="number" step="0.1" placeholder="Height" value={item.dimensions?.height || 0} onChange={(e) => { const newItems = [...editForm.items]; newItems[index].dimensions = { ...newItems[index].dimensions, height: parseFloat(e.target.value) || 0 }; setEditForm({ ...editForm, items: newItems }); }} /></div></div>
                   </div>
                 ))}
                 <Button type="button" variant="outline" onClick={() => { setEditForm({ ...editForm, items: [...editForm.items, { description: "", quantity: 1, weight: 0, dimensions: { length: 0, width: 0, height: 0 }, value: 0, category: "general", hazardous: false }] }); }} className="w-full mt-2"><Plus className="h-4 w-4 mr-2" />Add Another Item</Button>
@@ -1139,10 +1164,10 @@ export default function ShipmentsPage() {
               <div className="border-2 border-teal-200 rounded-lg p-4 bg-teal-50/30">
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-teal-700"><Shield className="h-5 w-5" /> Special Services</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Insurance Coverage</Label><Switch checked={editForm.insuranceRequired} onCheckedChange={(checked) => setEditForm({ ...editForm, insuranceRequired: checked })} /></div>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Signature Required</Label><Switch checked={editForm.signatureRequired} onCheckedChange={(checked) => setEditForm({ ...editForm, signatureRequired: checked })} /></div>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Temperature Controlled</Label><Switch checked={editForm.temperatureControlled} onCheckedChange={(checked) => setEditForm({ ...editForm, temperatureControlled: checked })} /></div>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Fragile Handling</Label><Switch checked={editForm.fragile} onCheckedChange={(checked) => setEditForm({ ...editForm, fragile: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Insurance Coverage (1% of value)</Label><Switch checked={editForm.insuranceRequired} onCheckedChange={(checked) => setEditForm({ ...editForm, insuranceRequired: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Signature Required (+{formatINR(SIGNATURE_FEE_INR)})</Label><Switch checked={editForm.signatureRequired} onCheckedChange={(checked) => setEditForm({ ...editForm, signatureRequired: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Temperature Controlled (+{formatINR(TEMP_CONTROL_FEE_INR)})</Label><Switch checked={editForm.temperatureControlled} onCheckedChange={(checked) => setEditForm({ ...editForm, temperatureControlled: checked })} /></div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg"><Label>Fragile Handling (+{formatINR(FRAGILE_FEE_INR)})</Label><Switch checked={editForm.fragile} onCheckedChange={(checked) => setEditForm({ ...editForm, fragile: checked })} /></div>
                 </div>
               </div>
 
@@ -1154,12 +1179,12 @@ export default function ShipmentsPage() {
 
               {/* Cost Summary */}
               <div className="border-2 border-pink-200 rounded-lg p-4 bg-pink-50/30">
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-pink-700"><DollarSign className="h-5 w-5" /> Cost Summary</h3>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-pink-700"><DollarSign className="h-5 w-5" /> Cost Summary (INR)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-white rounded-lg"><Weight className="h-5 w-5 text-blue-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Weight</p><p className="font-bold">{calculateEditTotalWeight().toFixed(2)} lbs</p></div>
-                  <div className="text-center p-3 bg-white rounded-lg"><DollarSign className="h-5 w-5 text-green-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Value</p><p className="font-bold">${calculateEditTotalValue().toFixed(2)}</p></div>
+                  <div className="text-center p-3 bg-white rounded-lg"><Weight className="h-5 w-5 text-blue-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Weight</p><p className="font-bold">{calculateEditTotalWeight().toFixed(2)} kg</p></div>
+                  <div className="text-center p-3 bg-white rounded-lg"><DollarSign className="h-5 w-5 text-green-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Value</p><p className="font-bold">{formatINR(calculateEditTotalValue())}</p></div>
                   <div className="text-center p-3 bg-white rounded-lg"><Box className="h-5 w-5 text-purple-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Total Items</p><p className="font-bold">{editForm.items?.length || 0}</p></div>
-                  <div className="text-center p-3 bg-white rounded-lg"><Truck className="h-5 w-5 text-orange-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Estimated Cost</p><p className="font-bold text-green-600">${(editForm.estimatedCost || 0).toFixed(2)}</p></div>
+                  <div className="text-center p-3 bg-white rounded-lg"><Truck className="h-5 w-5 text-orange-600 mx-auto mb-1" /><p className="text-xs text-gray-500">Estimated Cost</p><p className="font-bold text-green-600">{formatINR(editForm.estimatedCost || 0)}</p></div>
                 </div>
               </div>
 
