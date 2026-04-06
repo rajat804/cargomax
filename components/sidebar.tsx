@@ -42,6 +42,10 @@ import {
   FileText,
   GitBranch,
   CalendarDays,
+  DollarSign,
+  Gift,
+  Receipt,
+  BarChart3,
   X,
   XSquare,
 } from "lucide-react";
@@ -236,6 +240,18 @@ export function Sidebar({ open, toggleSidebar }: SidebarProps) {
           title: 'Lifecycle',
           href: '/lifecycle',
         },
+      ],
+    },
+    {
+      title: "Payroll Management",
+      items: [
+        { icon: DollarSign, title: 'Dashboard', href: '/payroll' },
+    { icon: FileText, title: 'Salary Structure', href: '/payroll/salary-structure' },
+    { icon: Settings, title: 'Process Payroll', href: '/payroll/process' },
+    { icon: Receipt, title: 'Payslips', href: '/payroll/payslips' },
+    { icon: Gift, title: 'Bonuses', href: '/payroll/bonuses' },
+    { icon: Receipt, title: 'Reimbursements', href: '/payroll/reimbursements' },
+    { icon: BarChart3, title: 'Reports', href: '/payroll/reports' },
       ],
     },
     {
