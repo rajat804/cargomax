@@ -10,6 +10,7 @@ export default function DashboardShellClient({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedModule, setSelectedModule] = useState("Operations");
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
@@ -25,9 +26,20 @@ export default function DashboardShellClient({
 
   return (
     <>
-      <Sidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <div className="flex flex-1 flex-col ml-0 lg:ml-64">
-        <TopBar toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
+      <Sidebar 
+        open={sidebarOpen} 
+        toggleSidebar={toggleSidebar}
+        selectedModule={selectedModule}
+        onModuleSelect={setSelectedModule}
+      />
+      {/* Updated margin-left from lg:ml-64 to lg:ml-80 to match sidebar width (w-80 = 20rem = 320px) */}
+      <div className="flex flex-1 flex-col ml-0 lg:ml-80">
+        <TopBar 
+          toggleSidebar={toggleSidebar} 
+          sidebarOpen={sidebarOpen}
+          selectedModule={selectedModule}
+          onModuleSelect={setSelectedModule}
+        />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
     </>
