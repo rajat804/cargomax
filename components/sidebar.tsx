@@ -215,12 +215,12 @@ const moduleNavGroups: Record<string, NavGroup[]> = {
           title: "TRANSPORTATION MASTERS",
           icon: Truck,
           children: [
-            { title: "DRIVER MASTER", icon: UserCog, href: "/fleet/drivers" },
+            { title: "DRIVER MASTER", icon: UserCog, href: "/operations/driver-master" },
           ]
         },
         { title: "VEHICLE GROUP MASTER", icon: FolderTree, href: "/operations/vehicle-group" },
         { title: "VEHICLE MANUFACTURE MASTER", icon: Building2, href: "/operations/vehicle-manufacture" },
-        { title: "VEHICLE MASTER (NEW)", icon: Bus, href: "/fleet/vehicles/new" },
+        { title: "VEHICLE MASTER (NEW)", icon: Bus, href: "/operations/vehicles-new" },
         { title: "VEHICLE SUBGROUP MASTER", icon: GitBranch, href: "/operations/vehicle-subgroup" },
         { title: "VEHICLE TYPE MASTER", icon: Bus, href: "/operations/vehicle-type" },
       ],
