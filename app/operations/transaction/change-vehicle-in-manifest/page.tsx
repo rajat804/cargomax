@@ -39,7 +39,22 @@ interface ManifestRecord {
   type: "internal" | "outstation";
 }
 
-const driverOptions = [
+interface DriverOption {
+  value: string;
+  label: string;
+}
+
+interface VehicleOption {
+  value: string;
+  label: string;
+}
+
+interface LocationOption {
+  value: string;
+  label: string;
+}
+
+const driverOptions: DriverOption[] = [
   { value: "Rajesh Kumar - DL01AB1234", label: "Rajesh Kumar - DL01AB1234" },
   { value: "Suresh Singh - DL02CD5678", label: "Suresh Singh - DL02CD5678" },
   { value: "Mahesh Sharma - DL03EF9012", label: "Mahesh Sharma - DL03EF9012" },
@@ -47,7 +62,7 @@ const driverOptions = [
   { value: "Satish Verma - DL05IJ7890", label: "Satish Verma - DL05IJ7890" },
 ];
 
-const vehicleOptions = [
+const vehicleOptions: VehicleOption[] = [
   { value: "UP14AB1234 - TATA 407", label: "UP14AB1234 - TATA 407" },
   { value: "UP15CD5678 - ASHOK LEYLAND", label: "UP15CD5678 - ASHOK LEYLAND" },
   { value: "UP16EF9012 - MAHINDRA PICKUP", label: "UP16EF9012 - MAHINDRA PICKUP" },
@@ -55,7 +70,7 @@ const vehicleOptions = [
   { value: "UP18IJ7890 - BHARAT BENZ", label: "UP18IJ7890 - BHARAT BENZ" },
 ];
 
-const locationOptions = [
+const locationOptions: LocationOption[] = [
   { value: "DELHI", label: "DELHI" },
   { value: "MUMBAI", label: "MUMBAI" },
   { value: "BANGALORE", label: "BANGALORE" },
@@ -91,7 +106,7 @@ export default function ChangeVehicleInManifest() {
     return `${prefix}${String(count).padStart(6, "0")}`;
   };
 
-  const resetForm = () => {
+  const resetForm = (): void => {
     setManifestNo(generateManifestNo());
     setDate(new Date());
     setFromLocation("");
@@ -106,7 +121,7 @@ export default function ChangeVehicleInManifest() {
     setReason("");
   };
 
-  const handleFetchManifest = () => {
+  const handleFetchManifest = (): void => {
     if (!manifestNo) {
       alert("Please enter Manifest #");
       return;
@@ -125,7 +140,7 @@ export default function ChangeVehicleInManifest() {
     }, 500);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = (): void => {
     if (!manifestNo) {
       alert("Please enter Manifest #");
       return;
@@ -164,7 +179,7 @@ export default function ChangeVehicleInManifest() {
     }, 500);
   };
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     resetForm();
   };
 
